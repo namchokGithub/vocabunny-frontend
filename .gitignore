@@ -137,3 +137,17 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+.vscode/
+
+![1775125516211](image/.gitignore/1775125516211.png)![1775125520405](image/.gitignore/1775125520405.png)# pnpm
+.pnpm-store/
+pnpm-debug.log*
+
+# macOS
+.DS_Store
+
+# Optional local deploy/cache
+.vercel
+.turbo
+![1775125525529](image/.gitignore/1775125525529.png)![1775125532115](image/.gitignore/1775125532115.png)
