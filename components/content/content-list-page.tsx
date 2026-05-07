@@ -8,19 +8,20 @@ import { SearchInput } from "@/components/ui/search-input";
 import { useAsyncData } from "@/lib/hooks/use-async-data";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Section } from "@/lib/api/content/sections";
 
-interface ContentListPageProps<T> {
+interface ContentListPageProps {
   title: string;
   description: string;
   createLabel: string;
   searchPlaceholder: string;
-  loader: () => Promise<T[]>;
-  columns: Column<T>[];
+  loader: () => Promise<Section[]>;
+  columns: Column<Section>[];
   topNote?: ReactNode;
   createHref?: string;
 }
 
-export function ContentListPage<T>({
+export function ContentListPage({
   title,
   description,
   createLabel,
@@ -29,7 +30,7 @@ export function ContentListPage<T>({
   columns,
   topNote,
   createHref,
-}: ContentListPageProps<T>) {
+}: ContentListPageProps) {
   const { data, isLoading } = useAsyncData(loader);
   const createButton = <PrimaryButton>{createLabel}</PrimaryButton>;
 
@@ -39,7 +40,11 @@ export function ContentListPage<T>({
         actions={
           <>
             <SecondaryButton>Export</SecondaryButton>
-            {createHref ? <Link href={createHref}>{createButton}</Link> : createButton}
+            {createHref ? (
+              <Link href={createHref}>{createButton}</Link>
+            ) : (
+              createButton
+            )}
           </>
         }
         description={description}
@@ -64,7 +69,11 @@ export function ContentListPage<T>({
         </div>
       </div>
 
-      {isLoading ? <LoadingTable /> : <DataTable columns={columns} rows={data ?? []} />}
+      {isLoading ? (
+        <LoadingTable />
+      ) : (
+        <DataTable columns={columns} rows={data ?? []} />
+      )}
     </div>
   );
 }

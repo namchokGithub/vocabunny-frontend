@@ -97,3 +97,11 @@ export async function deleteSection(
 ): Promise<ApiResponse<DeleteSectionResponse>> {
   return apiClient.delete(`${BASE_PATH}/${id}`);
 }
+
+export const sectionsApi = {
+  getSections,
+  getSectionById,
+  createSection,
+  updateSection,
+  deleteSection,
+};

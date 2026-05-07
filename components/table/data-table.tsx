@@ -8,7 +8,7 @@ export interface Column<T> {
   key: string;
   header: string;
   className?: string;
-  render: (row: T) => ReactNode;
+  render?: (row: T) => ReactNode;
 }
 
 interface DataTableProps<T> {
@@ -37,7 +37,7 @@ export function DataTable<T>({
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.12em] text-slate-500"
+                  className="px-4 py-3 text-left text-xs font-semibold tracking-[0.12em] text-slate-500 uppercase"
                 >
                   {column.header}
                 </th>
@@ -50,9 +50,14 @@ export function DataTable<T>({
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className={cn("px-4 py-3 text-sm text-slate-700", column.className)}
+                    className={cn(
+                      "px-4 py-3 text-sm text-slate-700",
+                      column.className,
+                    )}
                   >
-                    {column.render(row)}
+                    {column.render
+                      ? column.render(row)
+                      : String(row[column.key as keyof T] ?? "-")}
                   </td>
                 ))}
               </tr>

@@ -2,7 +2,7 @@
 
 import { sectionColumns } from "@/components/content/column-definitions";
 import { ContentListPage } from "@/components/content/content-list-page";
-import { contentApi } from "@/lib/api";
+import { sectionsService } from "@/lib/services/content/sections.service";
 
 export default function SectionsPage() {
   return (
@@ -10,7 +10,7 @@ export default function SectionsPage() {
       columns={sectionColumns}
       createLabel="Create Section"
       description="Manage top-level learning sections used to organize the learner journey."
-      loader={contentApi.getSections}
+      loader={sectionsService.getSections}
       searchPlaceholder="Search sections..."
       title="Sections"
     />
