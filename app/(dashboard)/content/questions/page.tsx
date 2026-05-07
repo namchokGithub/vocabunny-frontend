@@ -2,7 +2,7 @@
 
 import { questionColumns } from "@/components/content/column-definitions";
 import { ContentListPage } from "@/components/content/content-list-page";
-import { contentApi } from "@/lib/api";
+import { questionApi } from "@/lib/api";
 
 export default function QuestionsPage() {
   return (
@@ -10,7 +10,7 @@ export default function QuestionsPage() {
       columns={questionColumns}
       createLabel="Create Question"
       description="Maintain individual question records and question type coverage."
-      loader={contentApi.getQuestions}
+      loader={questionApi.getQuestions}
       searchPlaceholder="Search questions..."
       title="Questions"
     />

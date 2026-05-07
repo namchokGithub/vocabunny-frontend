@@ -1,11 +1,13 @@
+import { env } from "@/lib/constants/env";
+import type { ApiResponse } from "@/types/api";
+import type { QueryParams } from "@/types/http";
+
 interface RequestOptions extends RequestInit {
-  query?: Record<string, string | number | boolean | undefined>;
+  query?: QueryParams;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3000/api";
-
 function buildUrl(path: string, query?: RequestOptions["query"]) {
-  const url = new URL(path, API_BASE_URL);
+  const url = new URL(path, env.apiBaseUrl);
 
   if (query) {
     Object.entries(query).forEach(([key, value]) => {
@@ -18,9 +20,13 @@ function buildUrl(path: string, query?: RequestOptions["query"]) {
   return url.toString();
 }
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+async function request<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
   const { query, headers, ...init } = options;
   const response = await fetch(buildUrl(path, query), {
+    cache: "no-store",
     ...init,
     headers: {
       "Content-Type": "application/json",
@@ -29,7 +35,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   });
 
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `API request failed: ${response.status} ${response.statusText}`,
+    );
   }
 
   return (await response.json()) as T;
@@ -41,10 +49,21 @@ async function mock<T>(data: T, delay = 250): Promise<T> {
 }
 
 export const apiClient = {
-  baseUrl: API_BASE_URL,
+  baseUrl: env.apiBaseUrl,
   request,
-  get: <T>(path: string, query?: RequestOptions["query"]) => request<T>(path, { method: "GET", query }),
+  get: <T>(path: string, query?: RequestOptions["query"]) =>
+    request<ApiResponse<T>>(path, { method: "GET", query }),
   post: <T>(path: string, body?: unknown) =>
-    request<T>(path, { method: "POST", body: JSON.stringify(body ?? {}) }),
+    request<ApiResponse<T>>(path, {
+      method: "POST",
+      body: JSON.stringify(body ?? {}),
+    }),
+  put: <T>(path: string, body?: unknown) =>
+    request<ApiResponse<T>>(path, {
+      method: "PUT",
+      body: JSON.stringify(body ?? {}),
+    }),
+  delete: <T>(path: string) =>
+    request<ApiResponse<T>>(path, { method: "DELETE" }),
   mock,
 };

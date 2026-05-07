@@ -4,7 +4,7 @@ import { FormField, FormSection, TextareaField } from "@/components/form/form-fi
 import { PageHeader } from "@/components/layout/page-header";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PrimaryButton, SecondaryButton } from "@/components/ui/button";
-import { contentApi } from "@/lib/api";
+import { questionSetApi } from "@/lib/api";
 import {
   defaultQuestionSetValues,
   toCreateQuestionSetPayload,
@@ -35,7 +35,7 @@ export default function CreateQuestionSetPage() {
 
     if (Object.keys(nextErrors).length === 0) {
       const payload = toCreateQuestionSetPayload(values);
-      const result = await contentApi.createQuestionSet(payload);
+      const result = await questionSetApi.createQuestionSet(payload);
       setSubmitMessage(
         `Mock submit completed for ${result.id}. Connect this flow to a real endpoint later.`,
       );
