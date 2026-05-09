@@ -52,7 +52,7 @@ export function ToastProvider({ children }: PropsWithChildren) {
 
       window.setTimeout(() => {
         dismissToast(id);
-      }, 3500);
+      }, 3000);
     },
     [dismissToast],
   );
@@ -67,7 +67,7 @@ export function ToastProvider({ children }: PropsWithChildren) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed right-4 bottom-4 z-70 flex w-full max-w-sm flex-col gap-3">
+      <div className="pointer-events-none fixed top-4 right-4 z-70 flex w-full max-w-sm flex-col gap-3">
         {toasts.map((toast) => (
           <div
             key={toast.id}

@@ -21,6 +21,7 @@ export function CreateSectionDialog({ onCreated }: CreateSectionDialogProps) {
   const formId = useId();
   const { showToast } = useToast();
   const [open, setOpen] = useState(false);
+  const [, setRefreshKey] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [values, setValues] = useState<SectionFormValues>(
     defaultSectionFormValues,
@@ -87,6 +88,7 @@ export function CreateSectionDialog({ onCreated }: CreateSectionDialogProps) {
       });
     } finally {
       setIsSubmitting(false);
+      setRefreshKey((current) => current + 1);
     }
   }
 

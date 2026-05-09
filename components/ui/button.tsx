@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import type { ButtonHTMLAttributes, PropsWithChildren } from "react";
 
-type ButtonVariant = "primary" | "secondary" | "ghost";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -12,7 +12,10 @@ const variantClasses: Record<ButtonVariant, string> = {
     "bg-[var(--primary)] text-white hover:bg-[#1748ea] border border-[var(--primary)]",
   secondary:
     "border border-[var(--border-strong)] bg-white text-[var(--foreground)] hover:bg-slate-50",
-  ghost: "border border-transparent bg-transparent text-slate-600 hover:bg-slate-100",
+  ghost:
+    "border border-transparent bg-transparent text-slate-600 hover:bg-slate-100",
+  danger:
+    "border border-[var(--destructive)] bg-[var(--destructive)] text-white hover:bg-[var(--destructive-hover)]",
 };
 
 function Button({
@@ -45,4 +48,8 @@ export function SecondaryButton(props: PropsWithChildren<ButtonProps>) {
 
 export function GhostButton(props: PropsWithChildren<ButtonProps>) {
   return <Button variant="ghost" {...props} />;
+}
+
+export function DangerButton(props: PropsWithChildren<ButtonProps>) {
+  return <Button variant="danger" {...props} />;
 }
