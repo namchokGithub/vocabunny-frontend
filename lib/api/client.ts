@@ -1,12 +1,16 @@
 import { env } from "@/lib/constants/env";
-import type { ApiResponse } from "@/types/api";
+
+import { getAccessToken } from "@/lib/auth/token";
+
 import type { QueryParams } from "@/types/http";
 
-interface RequestOptions extends RequestInit {
+interface RequestOptions extends Omit<RequestInit, "body"> {
   query?: QueryParams;
+
+  body?: unknown;
 }
 
-function buildUrl(path: string, query?: RequestOptions["query"]) {
+function buildUrl(path: string, query?: QueryParams) {
   const url = new URL(path, env.apiBaseUrl);
 
   if (query) {
@@ -20,27 +24,26 @@ function buildUrl(path: string, query?: RequestOptions["query"]) {
   return url.toString();
 }
 
-async function request<T>(
-  path: string,
-  options: RequestOptions = {},
-): Promise<T> {
-  const { query, headers, ...init } = options;
-  const response = await fetch(buildUrl(path, query), {
-    cache: "no-store",
-    ...init,
+async function request<T>(path: string, options?: RequestOptions): Promise<T> {
+  const token = getAccessToken();
+
+  const response = await fetch(buildUrl(path, options?.query), {
+    ...options,
+
     headers: {
       "Content-Type": "application/json",
-      ...headers,
+
+      ...(token && {
+        Authorization: `Bearer ${token}`,
+      }),
+
+      ...options?.headers,
     },
+
+    body: options?.body ? JSON.stringify(options.body) : undefined,
   });
 
-  if (!response.ok) {
-    throw new Error(
-      `API request failed: ${response.status} ${response.statusText}`,
-    );
-  }
-
-  return (await response.json()) as T;
+  return response.json();
 }
 
 async function mock<T>(data: T, delay = 250): Promise<T> {
@@ -49,21 +52,28 @@ async function mock<T>(data: T, delay = 250): Promise<T> {
 }
 
 export const apiClient = {
-  baseUrl: env.apiBaseUrl,
-  request,
-  get: <T>(path: string, query?: RequestOptions["query"]) =>
-    request<ApiResponse<T>>(path, { method: "GET", query }),
-  post: <T>(path: string, body?: unknown) =>
-    request<ApiResponse<T>>(path, {
+  get: <T>(path: string, query?: QueryParams) =>
+    request<T>(path, {
+      method: "GET",
+      query,
+    }),
+
+  post: <T>(path: string, options?: RequestOptions) =>
+    request<T>(path, {
+      ...options,
       method: "POST",
-      body: JSON.stringify(body ?? {}),
     }),
-  put: <T>(path: string, body?: unknown) =>
-    request<ApiResponse<T>>(path, {
+
+  put: <T>(path: string, options?: RequestOptions) =>
+    request<T>(path, {
+      ...options,
       method: "PUT",
-      body: JSON.stringify(body ?? {}),
     }),
+
   delete: <T>(path: string) =>
-    request<ApiResponse<T>>(path, { method: "DELETE" }),
+    request<T>(path, {
+      method: "DELETE",
+    }),
+
   mock,
 };

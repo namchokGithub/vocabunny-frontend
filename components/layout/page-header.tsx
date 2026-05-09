@@ -9,7 +9,7 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, actions }: PageHeaderProps) {
   return (
-    <section className="mb-6 flex flex-col gap-4 rounded-[28px] border border-[var(--border)] bg-white/90 p-6 shadow-[var(--shadow)] lg:flex-row lg:items-center lg:justify-between">
+    <section className="mb-6 flex flex-col gap-4 rounded-[28px] border border-(--border) bg-white/90 p-6 shadow-(--shadow) lg:flex-row lg:items-center lg:justify-between">
       <div>
         <Breadcrumbs />
         <h2 className="mt-3 text-3xl font-bold text-slate-950">{title}</h2>
