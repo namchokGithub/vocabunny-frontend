@@ -3,7 +3,7 @@
 import { iconMap } from "@/components/layout/icon-map";
 import { GhostButton } from "@/components/ui/button";
 import { sidebarNavigation } from "@/lib/constants/navigation";
-import { useMockSession } from "@/lib/hooks/use-mock-session";
+import { useSession } from "@/lib/hooks/use-session";
 import { isRouteActive } from "@/lib/utils/routes";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -17,27 +17,35 @@ interface AppSidebarProps {
 
 export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
   const pathname = usePathname();
-  const { session } = useMockSession();
+  const { session } = useSession();
   const visibleNavigation = session
-    ? sidebarNavigation.filter((item) => item.allowedRoles?.includes(session.role))
+    ? sidebarNavigation.filter((item) =>
+        item.allowedRoles?.includes(session.role),
+      )
     : [];
 
   return (
     <aside
       className={cn(
         "card sticky top-4 hidden h-[calc(100vh-2rem)] flex-col rounded-[28px] border p-4 lg:flex",
-        collapsed ? "w-[92px]" : "w-[280px]",
+        collapsed ? "w-23" : "w-70",
       )}
     >
       <div className="mb-6 flex items-center justify-between gap-3">
         <div className={cn("overflow-hidden", collapsed && "hidden")}>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
             VocabBunny BO
           </p>
-          <h1 className="mt-1 text-lg font-bold text-slate-900">Admin Console</h1>
+          <h1 className="mt-1 text-lg font-bold text-slate-900">
+            Admin Console
+          </h1>
         </div>
         <GhostButton className="h-10 w-10 rounded-xl p-0" onClick={onToggle}>
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          {collapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
         </GhostButton>
       </div>
 
@@ -54,17 +62,26 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
                 className={cn(
                   "flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition",
                   isActive
-                    ? "bg-[var(--primary)] text-white shadow-lg shadow-blue-500/20"
+                    ? "bg-(--primary) text-white shadow-lg shadow-blue-500/20"
                     : "text-slate-600 hover:bg-slate-100",
                 )}
                 href={item.href}
               >
-                <Icon className="h-5 w-5 shrink-0" />
-                {!collapsed ? <span>{item.title}</span> : null}
+                <Icon
+                  className={cn(
+                    "h-5 w-5 shrink-0",
+                    isActive ? "text-white" : "text-slate-500",
+                  )}
+                />
+                {!collapsed ? (
+                  <span className={isActive ? "text-white" : "text-slate-500"}>
+                    {item.title}
+                  </span>
+                ) : null}
               </Link>
 
               {!collapsed && item.children ? (
-                <div className="ml-5 space-y-1 border-l border-[var(--border)] pl-4">
+                <div className="ml-5 space-y-1 border-l border-(--border) pl-4">
                   {item.children.map((child) => {
                     const childActive = isRouteActive(pathname, child.href);
                     return (
@@ -73,7 +90,7 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
                         className={cn(
                           "block rounded-xl px-3 py-2 text-sm transition",
                           childActive
-                            ? "bg-blue-50 font-semibold text-[var(--primary)]"
+                            ? "bg-blue-50 font-semibold text-(--primary)"
                             : "text-slate-500 hover:bg-slate-50 hover:text-slate-800",
                         )}
                         href={child.href}
@@ -91,7 +108,7 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
 
       {!collapsed ? (
         <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-600">
+          <p className="text-xs font-semibold tracking-[0.14em] text-blue-600 uppercase">
             Active Role
           </p>
           <p className="mt-2 text-sm font-semibold text-blue-900">
@@ -99,7 +116,7 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
           </p>
           <p className="mt-2 text-sm text-blue-900">
             {session
-              ? "Mock session is enabled. Replace it later with real auth and permission data."
+              ? "Role-based navigation is active from the authenticated back-office session."
               : "No active session. Dashboard routes will be blocked until sign-in succeeds."}
           </p>
         </div>

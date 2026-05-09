@@ -1,10 +1,10 @@
 "use client";
 
 import { AccessDenied } from "@/components/layout/access-denied";
-import { SecondaryButton } from "@/components/ui/button";
 import { hasRouteAccess } from "@/lib/constants/access";
-import { useMockSession } from "@/lib/hooks/use-mock-session";
-import Link from "next/link";
+import { useSession } from "@/lib/hooks/use-session";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import type { PropsWithChildren } from "react";
 
 interface AuthGuardProps {
@@ -12,33 +12,17 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children, pathname }: PropsWithChildren<AuthGuardProps>) {
-  const { session, isLoading } = useMockSession();
+  const router = useRouter();
+  const { session, isLoading } = useSession();
 
-  if (isLoading) {
-    return (
-      <div className="card rounded-[28px] p-8">
-        <p className="text-sm text-slate-500">Checking session...</p>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (!isLoading && !session) {
+      router.replace("/login");
+    }
+  }, [isLoading, session, router]);
 
-  if (!session) {
-    return (
-      <div className="card rounded-[28px] p-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-600">
-          Auth Guard
-        </p>
-        <h2 className="mt-3 text-3xl font-bold text-slate-950">Sign-in Required</h2>
-        <p className="mt-3 text-sm text-slate-500">
-          Dashboard routes are protected by a placeholder auth guard until real authentication is connected.
-        </p>
-        <div className="mt-6">
-          <Link href="/login">
-            <SecondaryButton>Go to Login</SecondaryButton>
-          </Link>
-        </div>
-      </div>
-    );
+  if (isLoading || !session) {
+    return null;
   }
 
   if (!hasRouteAccess(session.role, pathname)) {

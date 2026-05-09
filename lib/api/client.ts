@@ -1,14 +1,17 @@
 import { env } from "@/lib/constants/env";
 
+import { clearAuthState, refreshAccessToken } from "@/lib/auth/auth";
 import { getAccessToken } from "@/lib/auth/token";
 
 import type { QueryParams } from "@/types/http";
 
 interface RequestOptions extends Omit<RequestInit, "body"> {
   query?: QueryParams;
-
   body?: unknown;
+  retryOnUnauthorized?: boolean;
 }
+
+let refreshPromise: Promise<string> | null = null;
 
 function buildUrl(path: string, query?: QueryParams) {
   const url = new URL(path, env.apiBaseUrl);
@@ -22,6 +25,36 @@ function buildUrl(path: string, query?: QueryParams) {
   }
 
   return url.toString();
+}
+
+async function parseResponseBody<T>(response: Response): Promise<T> {
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    return (await response.json()) as T;
+  }
+
+  return (await response.text()) as T;
+}
+
+async function refreshAccessTokenOnce() {
+  if (!refreshPromise) {
+    refreshPromise = refreshAccessToken().finally(() => {
+      refreshPromise = null;
+    });
+  }
+
+  return refreshPromise;
+}
+
+function redirectToLogin() {
+  if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+    window.location.href = "/login";
+  }
 }
 
 async function request<T>(path: string, options?: RequestOptions): Promise<T> {
@@ -43,7 +76,47 @@ async function request<T>(path: string, options?: RequestOptions): Promise<T> {
     body: options?.body ? JSON.stringify(options.body) : undefined,
   });
 
-  return response.json();
+  if (
+    response.status === 401 &&
+    options?.retryOnUnauthorized !== false &&
+    path !== "/api/v1/bo/auth/login/password" &&
+    path !== "/api/v1/bo/auth/refresh"
+  ) {
+    try {
+      const nextToken = await refreshAccessTokenOnce();
+
+      return request<T>(path, {
+        ...options,
+        headers: {
+          ...options?.headers,
+          Authorization: `Bearer ${nextToken}`,
+        },
+        retryOnUnauthorized: false,
+      });
+    } catch {
+      clearAuthState();
+      redirectToLogin();
+      throw new Error("Your session has expired. Please sign in again.");
+    }
+  }
+
+  const body = await parseResponseBody<unknown>(response);
+
+  if (!response.ok) {
+    const message =
+      typeof body === "object" && body !== null && "message" in body
+        ? String(body.message)
+        : "Request failed.";
+
+    if (response.status === 401) {
+      clearAuthState();
+      redirectToLogin();
+    }
+
+    throw new Error(message);
+  }
+
+  return body as T;
 }
 
 async function mock<T>(data: T, delay = 250): Promise<T> {
