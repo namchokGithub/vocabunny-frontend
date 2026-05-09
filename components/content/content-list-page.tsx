@@ -64,7 +64,7 @@ export function ContentListPage<T>({
         description={description}
         actions={
           <>
-            <SecondaryButton>Export</SecondaryButton>
+            {/* <SecondaryButton>Export</SecondaryButton> */}
 
             {createAction ? (
               createAction

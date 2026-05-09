@@ -91,3 +91,8 @@ pnpm exec next build --webpack
 - The current implementation uses mock data for MVP workflows.
 - API-related code is isolated under `lib/api/` to make future backend integration straightforward.
 - The UI is optimized for internal staff operations rather than learner experience.
+
+---
+
+_Namchok Singhachai_
+_© 2026 VocabBunny. Released under the MIT License._
