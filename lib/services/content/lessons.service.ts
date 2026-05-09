@@ -5,9 +5,10 @@ import {
   type Lesson,
   type UpdateLessonPayload,
 } from "@/lib/api/content/lessons";
+import type { PaginatedResult } from "@/types/pagination";
 
 export const lessonsService = {
-  async getLessons(params?: GetLessonsParams): Promise<Lesson[]> {
+  async getLessons(params?: GetLessonsParams): Promise<PaginatedResult<Lesson>> {
     const response = await lessonsApi.getLessons(params);
 
     if (!response.success) {

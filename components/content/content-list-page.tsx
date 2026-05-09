@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import type { ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
 
@@ -15,23 +15,19 @@ import { PrimaryButton, SecondaryButton } from "@/components/ui/button";
 import { SearchInput } from "@/components/ui/search-input";
 
 import { useAsyncData } from "@/lib/hooks/use-async-data";
+import type { PaginatedResult, PaginationParams } from "@/types/pagination";
 
 interface ContentListPageProps<T> {
   title: string;
-
   description: string;
-
   createLabel: string;
-
   searchPlaceholder: string;
-
-  loader: () => Promise<T[]>;
-
+  loader: (params?: PaginationParams) => Promise<PaginatedResult<T>>;
   columns: Column<T>[];
-
   topNote?: ReactNode;
-
   createHref?: string;
+  createAction?: ReactNode;
+  defaultPageSize?: number;
 }
 
 export function ContentListPage<T>({
@@ -43,10 +39,23 @@ export function ContentListPage<T>({
   columns,
   topNote,
   createHref,
+  createAction,
+  defaultPageSize = 10,
 }: ContentListPageProps<T>) {
-  const { data, isLoading } = useAsyncData(loader);
-
+  const [page, setPage] = useState(1);
+  const paginatedLoader = useCallback(
+    () =>
+      loader({
+        page,
+        limit: defaultPageSize,
+      }),
+    [defaultPageSize, loader, page],
+  );
+  const { data, isLoading, error } = useAsyncData(paginatedLoader);
   const createButton = <PrimaryButton>{createLabel}</PrimaryButton>;
+  const paging = data?.paging;
+  const hasPreviousPage = (paging?.page ?? page) > 1;
+  const hasNextPage = paging ? paging.page < paging.total_pages : false;
 
   return (
     <div>
@@ -57,7 +66,9 @@ export function ContentListPage<T>({
           <>
             <SecondaryButton>Export</SecondaryButton>
 
-            {createHref ? (
+            {createAction ? (
+              createAction
+            ) : createHref ? (
               <Link href={createHref}>{createButton}</Link>
             ) : (
               createButton
@@ -77,12 +88,26 @@ export function ContentListPage<T>({
           </div>
 
           <div className="flex items-center gap-3 text-sm text-slate-500">
-            <span>Page 1 of 12</span>
+            <span>
+              {paging
+                ? `Page ${paging.page} of ${paging.total_pages} • ${paging.total} records`
+                : "Loading pagination..."}
+            </span>
 
             <div className="flex gap-2">
-              <SecondaryButton>Prev</SecondaryButton>
+              <SecondaryButton
+                disabled={!hasPreviousPage || isLoading}
+                onClick={() => setPage((current) => current - 1)}
+              >
+                Prev
+              </SecondaryButton>
 
-              <SecondaryButton>Next</SecondaryButton>
+              <SecondaryButton
+                disabled={!hasNextPage || isLoading}
+                onClick={() => setPage((current) => current + 1)}
+              >
+                Next
+              </SecondaryButton>
             </div>
           </div>
         </div>
@@ -90,8 +115,12 @@ export function ContentListPage<T>({
 
       {isLoading ? (
         <LoadingTable />
+      ) : error ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+          {error}
+        </div>
       ) : (
-        <DataTable columns={columns} rows={data ?? []} />
+        <DataTable columns={columns} rows={data?.items ?? []} />
       )}
     </div>
   );

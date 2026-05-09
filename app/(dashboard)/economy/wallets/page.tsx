@@ -2,7 +2,7 @@
 
 import { ContentListPage } from "@/components/content/content-list-page";
 import { walletColumns } from "@/components/operations/column-definitions";
-import { economyApi } from "@/lib/api";
+import { economyService } from "@/lib/services/economy.service";
 
 export default function WalletsPage() {
   return (
@@ -10,7 +10,7 @@ export default function WalletsPage() {
       columns={walletColumns}
       createLabel="Create Wallet"
       description="Inspect user wallets, balances, and review states."
-      loader={economyApi.getWallets}
+      loader={economyService.getWallets}
       searchPlaceholder="Search wallets..."
       title="Wallets"
     />

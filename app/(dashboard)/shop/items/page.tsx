@@ -2,7 +2,7 @@
 
 import { ContentListPage } from "@/components/content/content-list-page";
 import { shopItemColumns } from "@/components/operations/column-definitions";
-import { shopApi } from "@/lib/api";
+import { shopService } from "@/lib/services/shop.service";
 
 export default function ShopItemsPage() {
   return (
@@ -10,7 +10,7 @@ export default function ShopItemsPage() {
       columns={shopItemColumns}
       createLabel="Create Item"
       description="Manage the in-game item catalog, pricing, and stock visibility."
-      loader={shopApi.getItems}
+      loader={shopService.getItems}
       searchPlaceholder="Search shop items..."
       title="Shop Items"
     />

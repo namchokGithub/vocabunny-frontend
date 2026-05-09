@@ -5,9 +5,10 @@ import {
   type Unit,
   type UpdateUnitPayload,
 } from "@/lib/api/content/units";
+import type { PaginatedResult } from "@/types/pagination";
 
 export const unitsService = {
-  async getUnits(params?: GetUnitsParams): Promise<Unit[]> {
+  async getUnits(params?: GetUnitsParams): Promise<PaginatedResult<Unit>> {
     const response = await unitsApi.getUnits(params);
 
     if (!response.success) {

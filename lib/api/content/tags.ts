@@ -2,6 +2,7 @@ import { apiClient } from "@/lib/api/client";
 
 import type { ApiResponse } from "@/types/api";
 import type { QueryParams } from "@/types/http";
+import type { PaginatedResult } from "@/types/pagination";
 
 const BASE_PATH = "/api/v1/bo/content/tags";
 
@@ -62,7 +63,7 @@ export interface DeleteTagResponse {
  */
 export async function getTags(
   params?: GetTagsParams,
-): Promise<ApiResponse<Tag[]>> {
+): Promise<ApiResponse<PaginatedResult<Tag>>> {
   return apiClient.get(BASE_PATH, params);
 }
 

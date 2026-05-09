@@ -5,11 +5,12 @@ import {
   type QuestionSet,
   type UpdateQuestionSetPayload,
 } from "@/lib/api/content/question-sets";
+import type { PaginatedResult } from "@/types/pagination";
 
 export const questionSetsService = {
   async getQuestionSets(
     params?: GetQuestionSetsParams,
-  ): Promise<QuestionSet[]> {
+  ): Promise<PaginatedResult<QuestionSet>> {
     const response = await questionSetsApi.getQuestionSets(params);
 
     if (!response.success) {

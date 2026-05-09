@@ -5,9 +5,10 @@ import {
   type Tag,
   type UpdateTagPayload,
 } from "@/lib/api/content/tags";
+import type { PaginatedResult } from "@/types/pagination";
 
 export const tagsService = {
-  async getTags(params?: GetTagsParams): Promise<Tag[]> {
+  async getTags(params?: GetTagsParams): Promise<PaginatedResult<Tag>> {
     const response = await tagsApi.getTags(params);
 
     if (!response.success) {

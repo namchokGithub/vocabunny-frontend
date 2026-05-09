@@ -2,6 +2,7 @@ import { apiClient } from "@/lib/api/client";
 
 import type { ApiResponse } from "@/types/api";
 import type { QueryParams } from "@/types/http";
+import type { PaginatedResult } from "@/types/pagination";
 
 const BASE_PATH = "/api/v1/bo/content/lessons";
 
@@ -80,7 +81,7 @@ export interface DeleteLessonResponse {
  */
 export async function getLessons(
   params?: GetLessonsParams,
-): Promise<ApiResponse<Lesson[]>> {
+): Promise<ApiResponse<PaginatedResult<Lesson>>> {
   return apiClient.get(BASE_PATH, params);
 }
 

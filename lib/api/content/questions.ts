@@ -2,6 +2,7 @@ import { apiClient } from "@/lib/api/client";
 
 import type { ApiResponse } from "@/types/api";
 import type { QueryParams } from "@/types/http";
+import type { PaginatedResult } from "@/types/pagination";
 
 const BASE_PATH = "/api/v1/bo/content/questions";
 
@@ -133,7 +134,7 @@ export interface DeleteQuestionResponse {
  */
 export async function getQuestions(
   params?: GetQuestionsParams,
-): Promise<ApiResponse<Question[]>> {
+): Promise<ApiResponse<PaginatedResult<Question>>> {
   return apiClient.get(BASE_PATH, params);
 }
 

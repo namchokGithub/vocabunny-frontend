@@ -5,9 +5,10 @@ import {
   type Question,
   type UpdateQuestionPayload,
 } from "@/lib/api/content/questions";
+import type { PaginatedResult } from "@/types/pagination";
 
 export const questionsService = {
-  async getQuestions(params?: GetQuestionsParams): Promise<Question[]> {
+  async getQuestions(params?: GetQuestionsParams): Promise<PaginatedResult<Question>> {
     const response = await questionsApi.getQuestions(params);
 
     if (!response.success) {

@@ -1,6 +1,7 @@
 import { apiClient } from "@/lib/api/client";
 import type { ApiResponse } from "@/types/api";
 import type { QueryParams } from "@/types/http";
+import type { PaginatedResult } from "@/types/pagination";
 
 const BASE_PATH = "/api/v1/bo/content/sections";
 
@@ -53,7 +54,7 @@ export interface DeleteSectionResponse {
  */
 export async function getSections(
   params?: GetSectionsParams,
-): Promise<ApiResponse<Section[]>> {
+): Promise<ApiResponse<PaginatedResult<Section>>> {
   return apiClient.get(BASE_PATH, params);
 }
 

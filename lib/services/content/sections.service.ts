@@ -5,9 +5,10 @@ import {
   type Section,
   type UpdateSectionPayload,
 } from "@/lib/api/content/sections";
+import type { PaginatedResult } from "@/types/pagination";
 
 export const sectionsService = {
-  async getSections(params?: GetSectionsParams): Promise<Section[]> {
+  async getSections(params?: GetSectionsParams): Promise<PaginatedResult<Section>> {
     const response = await sectionsApi.getSections(params);
 
     if (!response.success) {

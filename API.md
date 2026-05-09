@@ -34,6 +34,7 @@ All protected endpoints require a `Bearer` JWT token in the `Authorization` head
 No authentication required.
 
 **Response `200`**
+
 ```json
 {
   "status": "ok",
@@ -55,6 +56,7 @@ Public endpoints — no token required.
 Login as an **app user** (learner).
 
 **Request**
+
 ```json
 {
   "email_or_username": "rabbit@example.com",
@@ -63,6 +65,34 @@ Login as an **app user** (learner).
 ```
 
 **Response `200`**
+
+```json
+{
+  "access_token": "eyJ...",
+  "refresh_token": "eyJ...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "refresh_expires_in": 2592000,
+  "user": { "...": "UserResponse" }
+}
+```
+
+---
+
+### `POST /api/v1/app/auth/refresh`
+
+Issue a new **app access token** from a valid app refresh token.
+
+**Request**
+
+```json
+{
+  "refresh_token": "eyJ..."
+}
+```
+
+**Response `200`**
+
 ```json
 {
   "access_token": "eyJ...",
@@ -71,6 +101,11 @@ Login as an **app user** (learner).
   "user": { "...": "UserResponse" }
 }
 ```
+
+**Notes**
+
+- Returns `401` when the refresh token is invalid or expired.
+- Returns `403` when the refresh token scope does not match the route.
 
 ---
 
@@ -82,32 +117,57 @@ Login as a **back-office user** (admin / content team). Returns a token scoped t
 
 ---
 
+### `POST /api/v1/bo/auth/refresh`
+
+Issue a new **back-office access token** from a valid `bo` refresh token.
+
+**Request / Response** — same shape as app refresh above.
+
+---
+
 ## Users (BO)
 
 > Scope: `bo` | Base path: `/api/v1/bo/users`
 
-| Method | Path | Permission / Role | Description |
-|--------|------|-------------------|-------------|
-| `GET` | `/bo/users` | `USER_READ` | List users with filters |
-| `POST` | `/bo/users` | `ADMIN`, `CONTENT_ADMIN` | Create a user |
-| `GET` | `/bo/users/by-email` | `USER_READ` | Look up user by email |
-| `GET` | `/bo/users/by-username` | `USER_READ` | Look up user by username |
-| `GET` | `/bo/users/:id` | `USER_READ` | Get user by ID |
-| `PUT` | `/bo/users/:id` | `ADMIN`, `CONTENT_ADMIN` | Update user |
-| `DELETE` | `/bo/users/:id` | `USER_BAN` | Delete user |
+| Method   | Path                    | Permission / Role        | Description              |
+| -------- | ----------------------- | ------------------------ | ------------------------ |
+| `GET`    | `/bo/users`             | `USER_READ`              | List users with filters  |
+| `POST`   | `/bo/users`             | `ADMIN`, `CONTENT_ADMIN` | Create a user            |
+| `GET`    | `/bo/users/by-email`    | `USER_READ`              | Look up user by email    |
+| `GET`    | `/bo/users/by-username` | `USER_READ`              | Look up user by username |
+| `GET`    | `/bo/users/:id`         | `USER_READ`              | Get user by ID           |
+| `PUT`    | `/bo/users/:id`         | `ADMIN`, `CONTENT_ADMIN` | Update user              |
+| `DELETE` | `/bo/users/:id`         | `USER_BAN`               | Delete user              |
 
 ### Query Parameters — `GET /bo/users`
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `page` | int | Page number |
-| `limit` | int | Items per page |
-| `sort_by` | string | Field to sort by |
-| `sort_order` | string | `ASC` or `DESC` |
-| `search` | string | Search term |
-| `role_id` | uuid | Filter by role |
-| `status` | string | `INACTIVE` \| `ACTIVE` \| `BANNED` \| `DELETED` |
-| `include_auth` | bool | Include auth identities in response |
+| Param          | Type   | Description                                     |
+| -------------- | ------ | ----------------------------------------------- |
+| `page`         | int    | Page number                                     |
+| `limit`        | int    | Items per page                                  |
+| `sort_by`      | string | Field to sort by                                |
+| `sort_order`   | string | `ASC` or `DESC`                                 |
+| `search`       | string | Search term                                     |
+| `role_id`      | uuid   | Filter by role                                  |
+| `status`       | string | `INACTIVE` \| `ACTIVE` \| `BANNED` \| `DELETED` |
+| `include_auth` | bool   | Include auth identities in response             |
+
+### `GET /bo/users` — Response Example
+
+```json
+{
+  "items": [],
+  "paging": {
+    "page": 1,
+    "limit": 20,
+    "total": 0,
+    "total_pages": 0
+  },
+  "query": {
+    "include_auth": false
+  }
+}
+```
 
 ### `POST /bo/users` — Request Body
 
@@ -145,13 +205,13 @@ All fields optional. Send only what should change.
 
 > Scope: `bo` | Requires role: `ADMIN` | Base path: `/api/v1/bo/roles`
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/bo/roles` | List roles |
-| `POST` | `/bo/roles` | Create role |
-| `GET` | `/bo/roles/:id` | Get role by ID |
-| `PUT` | `/bo/roles/:id` | Update role |
-| `DELETE` | `/bo/roles/:id` | Delete role |
+| Method   | Path            | Description    |
+| -------- | --------------- | -------------- |
+| `GET`    | `/bo/roles`     | List roles     |
+| `POST`   | `/bo/roles`     | Create role    |
+| `GET`    | `/bo/roles/:id` | Get role by ID |
+| `PUT`    | `/bo/roles/:id` | Update role    |
+| `DELETE` | `/bo/roles/:id` | Delete role    |
 
 ### `POST /bo/roles` — Request Body
 
@@ -173,11 +233,11 @@ Available `permission_code` values: `CONTENT_READ` | `CONTENT_WRITE` | `CONTENT_
 
 ### Query Parameters — `GET /bo/roles`
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `search` | string | Search by name |
-| `permission` | string | Filter by permission code |
-| `page`, `limit`, `sort_by`, `sort_order` | — | Pagination & sorting |
+| Param                                    | Type   | Description               |
+| ---------------------------------------- | ------ | ------------------------- |
+| `search`                                 | string | Search by name            |
+| `permission`                             | string | Filter by permission code |
+| `page`, `limit`, `sort_by`, `sort_order` | —      | Pagination & sorting      |
 
 ---
 
@@ -187,13 +247,13 @@ Available `permission_code` values: `CONTENT_READ` | `CONTENT_WRITE` | `CONTENT_
 
 An **auth identity** links a user to a login provider (password, Google, Apple).
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/bo/auth-identities` | List identities |
-| `POST` | `/bo/auth-identities` | Create identity |
-| `GET` | `/bo/auth-identities/:id` | Get identity by ID |
-| `PUT` | `/bo/auth-identities/:id` | Update identity |
-| `DELETE` | `/bo/auth-identities/:id` | Delete identity |
+| Method   | Path                      | Description        |
+| -------- | ------------------------- | ------------------ |
+| `GET`    | `/bo/auth-identities`     | List identities    |
+| `POST`   | `/bo/auth-identities`     | Create identity    |
+| `GET`    | `/bo/auth-identities/:id` | Get identity by ID |
+| `PUT`    | `/bo/auth-identities/:id` | Update identity    |
+| `DELETE` | `/bo/auth-identities/:id` | Delete identity    |
 
 ### `POST /bo/auth-identities` — Request Body
 
@@ -209,11 +269,26 @@ An **auth identity** links a user to a login provider (password, Google, Apple).
 
 ### Query Parameters — `GET /bo/auth-identities`
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `user_id` | uuid | Filter by user |
-| `provider` | string | Filter by provider |
-| `page`, `limit`, `sort_by`, `sort_order` | — | Pagination & sorting |
+| Param                                    | Type   | Description          |
+| ---------------------------------------- | ------ | -------------------- |
+| `user_id`                                | uuid   | Filter by user       |
+| `provider`                               | string | Filter by provider   |
+| `page`, `limit`, `sort_by`, `sort_order` | —      | Pagination & sorting |
+
+### `GET /bo/auth-identities` — Response Example
+
+```json
+{
+  "items": [],
+  "paging": {
+    "page": 1,
+    "limit": 20,
+    "total": 0,
+    "total_pages": 0
+  },
+  "query": {}
+}
+```
 
 ---
 
@@ -223,13 +298,13 @@ An **auth identity** links a user to a login provider (password, Google, Apple).
 
 Sections are the top level of the content hierarchy: **Section → Lesson → Unit → Question Set → Question**.
 
-| Method | Path | Permission | Description |
-|--------|------|------------|-------------|
-| `GET` | `/bo/content/sections` | `CONTENT_READ` | List sections |
-| `POST` | `/bo/content/sections` | `CONTENT_WRITE` | Create section |
-| `GET` | `/bo/content/sections/:id` | `CONTENT_READ` | Get section by ID |
-| `PUT` | `/bo/content/sections/:id` | `CONTENT_WRITE` | Update section |
-| `DELETE` | `/bo/content/sections/:id` | `CONTENT_WRITE` | Delete section |
+| Method   | Path                       | Permission      | Description       |
+| -------- | -------------------------- | --------------- | ----------------- |
+| `GET`    | `/bo/content/sections`     | `CONTENT_READ`  | List sections     |
+| `POST`   | `/bo/content/sections`     | `CONTENT_WRITE` | Create section    |
+| `GET`    | `/bo/content/sections/:id` | `CONTENT_READ`  | Get section by ID |
+| `PUT`    | `/bo/content/sections/:id` | `CONTENT_WRITE` | Update section    |
+| `DELETE` | `/bo/content/sections/:id` | `CONTENT_WRITE` | Delete section    |
 
 ### `POST /bo/content/sections` — Request Body
 
@@ -245,11 +320,11 @@ Sections are the top level of the content hierarchy: **Section → Lesson → Un
 
 ### Query Parameters — `GET /bo/content/sections`
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `search` | string | Search in title / slug |
-| `is_published` | bool | Filter by published status |
-| `page`, `limit`, `sort_by`, `sort_order` | — | Pagination & sorting |
+| Param                                    | Type   | Description                |
+| ---------------------------------------- | ------ | -------------------------- |
+| `search`                                 | string | Search in title / slug     |
+| `is_published`                           | bool   | Filter by published status |
+| `page`, `limit`, `sort_by`, `sort_order` | —      | Pagination & sorting       |
 
 ---
 
@@ -257,13 +332,13 @@ Sections are the top level of the content hierarchy: **Section → Lesson → Un
 
 > Scope: `bo` | Base path: `/api/v1/bo/content/lessons`
 
-| Method | Path | Permission | Description |
-|--------|------|------------|-------------|
-| `GET` | `/bo/content/lessons` | `CONTENT_READ` | List lessons |
-| `POST` | `/bo/content/lessons` | `CONTENT_WRITE` | Create lesson |
-| `GET` | `/bo/content/lessons/:id` | `CONTENT_READ` | Get lesson by ID |
-| `PUT` | `/bo/content/lessons/:id` | `CONTENT_WRITE` | Update lesson |
-| `DELETE` | `/bo/content/lessons/:id` | `CONTENT_WRITE` | Delete lesson |
+| Method   | Path                      | Permission      | Description      |
+| -------- | ------------------------- | --------------- | ---------------- |
+| `GET`    | `/bo/content/lessons`     | `CONTENT_READ`  | List lessons     |
+| `POST`   | `/bo/content/lessons`     | `CONTENT_WRITE` | Create lesson    |
+| `GET`    | `/bo/content/lessons/:id` | `CONTENT_READ`  | Get lesson by ID |
+| `PUT`    | `/bo/content/lessons/:id` | `CONTENT_WRITE` | Update lesson    |
+| `DELETE` | `/bo/content/lessons/:id` | `CONTENT_WRITE` | Delete lesson    |
 
 ### `POST /bo/content/lessons` — Request Body
 
@@ -280,9 +355,9 @@ Sections are the top level of the content hierarchy: **Section → Lesson → Un
 
 ### Additional Query Parameter — `GET /bo/content/lessons`
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `section_id` | uuid | Filter by parent section |
+| Param          | Type | Description                |
+| -------------- | ---- | -------------------------- |
+| `section_id`   | uuid | Filter by parent section   |
 | `is_published` | bool | Filter by published status |
 
 ---
@@ -291,13 +366,13 @@ Sections are the top level of the content hierarchy: **Section → Lesson → Un
 
 > Scope: `bo` | Base path: `/api/v1/bo/content/units`
 
-| Method | Path | Permission | Description |
-|--------|------|------------|-------------|
-| `GET` | `/bo/content/units` | `CONTENT_READ` | List units |
-| `POST` | `/bo/content/units` | `CONTENT_WRITE` | Create unit |
-| `GET` | `/bo/content/units/:id` | `CONTENT_READ` | Get unit by ID |
-| `PUT` | `/bo/content/units/:id` | `CONTENT_WRITE` | Update unit |
-| `DELETE` | `/bo/content/units/:id` | `CONTENT_WRITE` | Delete unit |
+| Method   | Path                    | Permission      | Description    |
+| -------- | ----------------------- | --------------- | -------------- |
+| `GET`    | `/bo/content/units`     | `CONTENT_READ`  | List units     |
+| `POST`   | `/bo/content/units`     | `CONTENT_WRITE` | Create unit    |
+| `GET`    | `/bo/content/units/:id` | `CONTENT_READ`  | Get unit by ID |
+| `PUT`    | `/bo/content/units/:id` | `CONTENT_WRITE` | Update unit    |
+| `DELETE` | `/bo/content/units/:id` | `CONTENT_WRITE` | Delete unit    |
 
 ### `POST /bo/content/units` — Request Body
 
@@ -319,13 +394,13 @@ Sections are the top level of the content hierarchy: **Section → Lesson → Un
 
 A question set groups questions within a unit and tracks a version number for curriculum iteration.
 
-| Method | Path | Permission | Description |
-|--------|------|------------|-------------|
-| `GET` | `/bo/content/question-sets` | `CONTENT_READ` | List question sets |
-| `POST` | `/bo/content/question-sets` | `CONTENT_WRITE` | Create question set |
-| `GET` | `/bo/content/question-sets/:id` | `CONTENT_READ` | Get question set by ID |
-| `PUT` | `/bo/content/question-sets/:id` | `CONTENT_WRITE` | Update question set |
-| `DELETE` | `/bo/content/question-sets/:id` | `CONTENT_WRITE` | Delete question set |
+| Method   | Path                            | Permission      | Description            |
+| -------- | ------------------------------- | --------------- | ---------------------- |
+| `GET`    | `/bo/content/question-sets`     | `CONTENT_READ`  | List question sets     |
+| `POST`   | `/bo/content/question-sets`     | `CONTENT_WRITE` | Create question set    |
+| `GET`    | `/bo/content/question-sets/:id` | `CONTENT_READ`  | Get question set by ID |
+| `PUT`    | `/bo/content/question-sets/:id` | `CONTENT_WRITE` | Update question set    |
+| `DELETE` | `/bo/content/question-sets/:id` | `CONTENT_WRITE` | Delete question set    |
 
 ### `POST /bo/content/question-sets` — Request Body
 
@@ -343,10 +418,10 @@ A question set groups questions within a unit and tracks a version number for cu
 
 ### Additional Query Parameters — `GET /bo/content/question-sets`
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `unit_id` | uuid | Filter by parent unit |
-| `version` | int | Filter by version |
+| Param          | Type | Description                |
+| -------------- | ---- | -------------------------- |
+| `unit_id`      | uuid | Filter by parent unit      |
+| `version`      | int  | Filter by version          |
 | `is_published` | bool | Filter by published status |
 
 ---
@@ -355,13 +430,13 @@ A question set groups questions within a unit and tracks a version number for cu
 
 > Scope: `bo` | Base path: `/api/v1/bo/content/questions`
 
-| Method | Path | Permission | Description |
-|--------|------|------------|-------------|
-| `GET` | `/bo/content/questions` | `CONTENT_READ` | List questions |
-| `POST` | `/bo/content/questions` | `CONTENT_WRITE` | Create question |
-| `GET` | `/bo/content/questions/:id` | `CONTENT_READ` | Get question by ID |
-| `PUT` | `/bo/content/questions/:id` | `CONTENT_WRITE` | Update question |
-| `DELETE` | `/bo/content/questions/:id` | `CONTENT_WRITE` | Delete question |
+| Method   | Path                        | Permission      | Description        |
+| -------- | --------------------------- | --------------- | ------------------ |
+| `GET`    | `/bo/content/questions`     | `CONTENT_READ`  | List questions     |
+| `POST`   | `/bo/content/questions`     | `CONTENT_WRITE` | Create question    |
+| `GET`    | `/bo/content/questions/:id` | `CONTENT_READ`  | Get question by ID |
+| `PUT`    | `/bo/content/questions/:id` | `CONTENT_WRITE` | Update question    |
+| `DELETE` | `/bo/content/questions/:id` | `CONTENT_WRITE` | Delete question    |
 
 ### `POST /bo/content/questions` — Request Body
 
@@ -385,13 +460,13 @@ A question set groups questions within a unit and tracks a version number for cu
 
 ### Additional Query Parameters — `GET /bo/content/questions`
 
-| Param | Type | Default | Description |
-|-------|------|---------|-------------|
-| `question_set_id` | uuid | — | Filter by question set |
-| `type` | string | — | Filter by question type |
-| `is_active` | bool | — | Filter by active status |
-| `include_choices` | bool | `true` | Include choices in response |
-| `include_tags` | bool | `true` | Include tags in response |
+| Param             | Type   | Default | Description                 |
+| ----------------- | ------ | ------- | --------------------------- |
+| `question_set_id` | uuid   | —       | Filter by question set      |
+| `type`            | string | —       | Filter by question type     |
+| `is_active`       | bool   | —       | Filter by active status     |
+| `include_choices` | bool   | `true`  | Include choices in response |
+| `include_tags`    | bool   | `true`  | Include tags in response    |
 
 ---
 
@@ -401,13 +476,13 @@ A question set groups questions within a unit and tracks a version number for cu
 
 Manage individual answer choices independently of their parent question.
 
-| Method | Path | Permission | Description |
-|--------|------|------------|-------------|
-| `GET` | `/bo/content/question-choices` | `CONTENT_READ` | List choices |
-| `POST` | `/bo/content/question-choices` | `CONTENT_WRITE` | Create choice |
-| `GET` | `/bo/content/question-choices/:id` | `CONTENT_READ` | Get choice by ID |
-| `PUT` | `/bo/content/question-choices/:id` | `CONTENT_WRITE` | Update choice |
-| `DELETE` | `/bo/content/question-choices/:id` | `CONTENT_WRITE` | Delete choice |
+| Method   | Path                               | Permission      | Description      |
+| -------- | ---------------------------------- | --------------- | ---------------- |
+| `GET`    | `/bo/content/question-choices`     | `CONTENT_READ`  | List choices     |
+| `POST`   | `/bo/content/question-choices`     | `CONTENT_WRITE` | Create choice    |
+| `GET`    | `/bo/content/question-choices/:id` | `CONTENT_READ`  | Get choice by ID |
+| `PUT`    | `/bo/content/question-choices/:id` | `CONTENT_WRITE` | Update choice    |
+| `DELETE` | `/bo/content/question-choices/:id` | `CONTENT_WRITE` | Delete choice    |
 
 ### `POST /bo/content/question-choices` — Request Body
 
@@ -428,13 +503,13 @@ Manage individual answer choices independently of their parent question.
 
 Tags are attached to questions for filtering and curriculum organization.
 
-| Method | Path | Permission | Description |
-|--------|------|------------|-------------|
-| `GET` | `/bo/content/tags` | `CONTENT_READ` | List tags |
-| `POST` | `/bo/content/tags` | `CONTENT_WRITE` | Create tag |
-| `GET` | `/bo/content/tags/:id` | `CONTENT_READ` | Get tag by ID |
-| `PUT` | `/bo/content/tags/:id` | `CONTENT_WRITE` | Update tag |
-| `DELETE` | `/bo/content/tags/:id` | `CONTENT_WRITE` | Delete tag |
+| Method   | Path                   | Permission      | Description   |
+| -------- | ---------------------- | --------------- | ------------- |
+| `GET`    | `/bo/content/tags`     | `CONTENT_READ`  | List tags     |
+| `POST`   | `/bo/content/tags`     | `CONTENT_WRITE` | Create tag    |
+| `GET`    | `/bo/content/tags/:id` | `CONTENT_READ`  | Get tag by ID |
+| `PUT`    | `/bo/content/tags/:id` | `CONTENT_WRITE` | Update tag    |
+| `DELETE` | `/bo/content/tags/:id` | `CONTENT_WRITE` | Delete tag    |
 
 ### `POST /bo/content/tags` — Request Body
 
@@ -450,13 +525,13 @@ Tags are attached to questions for filtering and curriculum organization.
 
 Media assets support both **external** storage (S3, R2, GCS, local paths) and **database** storage (binary data).
 
-| Method | Path | Permission | Description |
-|--------|------|------------|-------------|
-| `GET` | `/bo/content/media-assets` | `CONTENT_READ` | List media assets |
-| `POST` | `/bo/content/media-assets` | `CONTENT_WRITE` | Create media asset |
-| `GET` | `/bo/content/media-assets/:id` | `CONTENT_READ` | Get asset by ID |
-| `PUT` | `/bo/content/media-assets/:id` | `CONTENT_WRITE` | Update asset |
-| `DELETE` | `/bo/content/media-assets/:id` | `CONTENT_WRITE` | Delete asset |
+| Method   | Path                           | Permission      | Description        |
+| -------- | ------------------------------ | --------------- | ------------------ |
+| `GET`    | `/bo/content/media-assets`     | `CONTENT_READ`  | List media assets  |
+| `POST`   | `/bo/content/media-assets`     | `CONTENT_WRITE` | Create media asset |
+| `GET`    | `/bo/content/media-assets/:id` | `CONTENT_READ`  | Get asset by ID    |
+| `PUT`    | `/bo/content/media-assets/:id` | `CONTENT_WRITE` | Update asset       |
+| `DELETE` | `/bo/content/media-assets/:id` | `CONTENT_WRITE` | Delete asset       |
 
 ### `POST /bo/content/media-assets` — Request Body
 
@@ -485,14 +560,14 @@ Media assets support both **external** storage (S3, R2, GCS, local paths) and **
 
 ### Query Parameters — `GET /bo/content/media-assets`
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `owner_user_id` | uuid | Filter by owning user |
-| `asset_type` | string | Filter by asset type |
-| `purpose` | string | Filter by purpose |
-| `storage_mode` | string | Filter by storage mode |
-| `storage_provider` | string | Filter by provider |
-| `is_public` | bool | Filter by visibility |
+| Param              | Type   | Description            |
+| ------------------ | ------ | ---------------------- |
+| `owner_user_id`    | uuid   | Filter by owning user  |
+| `asset_type`       | string | Filter by asset type   |
+| `purpose`          | string | Filter by purpose      |
+| `storage_mode`     | string | Filter by storage mode |
+| `storage_provider` | string | Filter by provider     |
+| `is_public`        | bool   | Filter by visibility   |
 
 ---
 
@@ -512,11 +587,14 @@ The server initialises a WebSocket manager (`app.Websocket`) but **no public Web
   "paging": {
     "page": 1,
     "limit": 20,
-    "total": 100
+    "total": 100,
+    "total_pages": 5
   },
   "query": {}
 }
 ```
+
+`total_pages` is calculated from `total` and `limit`. When `total` is `0`, `total_pages` is also `0`.
 
 ### Delete Response
 
@@ -531,9 +609,7 @@ Standard HTTP status codes. Body shape varies by error type (validation errors i
 ```json
 {
   "message": "validation failed",
-  "details": [
-    { "field": "email", "error": "must be a valid email address" }
-  ]
+  "details": [{ "field": "email", "error": "must be a valid email address" }]
 }
 ```
 
@@ -543,28 +619,28 @@ Standard HTTP status codes. Body shape varies by error type (validation errors i
 
 ### Token Scopes
 
-| Scope | Route group | Description |
-|-------|-------------|-------------|
+| Scope | Route group       | Description               |
+| ----- | ----------------- | ------------------------- |
 | `app` | `/api/v1/app/...` | End-user (learner) access |
-| `bo` | `/api/v1/bo/...` | Back-office admin access |
+| `bo`  | `/api/v1/bo/...`  | Back-office admin access  |
 
 ### Roles
 
-| Role | Description |
-|------|-------------|
-| `ADMIN` | Full system access |
+| Role            | Description                     |
+| --------------- | ------------------------------- |
+| `ADMIN`         | Full system access              |
 | `CONTENT_ADMIN` | Content creation and management |
-| `MODERATOR` | Moderation actions |
-| `USER` | Basic learner access |
+| `MODERATOR`     | Moderation actions              |
+| `USER`          | Basic learner access            |
 
 ### Permission Codes
 
-| Code | Grants |
-|------|--------|
-| `CONTENT_READ` | Read all content resources |
-| `CONTENT_WRITE` | Create and update content |
+| Code              | Grants                      |
+| ----------------- | --------------------------- |
+| `CONTENT_READ`    | Read all content resources  |
+| `CONTENT_WRITE`   | Create and update content   |
 | `CONTENT_PUBLISH` | Publish / unpublish content |
-| `USER_READ` | Read user profiles |
-| `USER_BAN` | Ban or delete users |
-| `ANALYTICS_READ` | Access analytics data |
-| `SYSTEM_CONFIG` | Modify system configuration |
+| `USER_READ`       | Read user profiles          |
+| `USER_BAN`        | Ban or delete users         |
+| `ANALYTICS_READ`  | Access analytics data       |
+| `SYSTEM_CONFIG`   | Modify system configuration |
