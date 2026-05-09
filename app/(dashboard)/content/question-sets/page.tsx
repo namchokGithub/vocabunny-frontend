@@ -1,9 +1,9 @@
 "use client";
 
-import { questionSetColumns } from "@/components/content/column-definitions";
+import { questionSetColumns } from "@/components/content/question-sets/question-set-columns";
 import { ContentListPage } from "@/components/content/content-list-page";
 import { SecondaryButton } from "@/components/ui/button";
-import { questionSetApi } from "@/lib/api";
+import { questionSetsService } from "@/lib/services/content/question-sets.service";
 import Link from "next/link";
 
 export default function QuestionSetsPage() {
@@ -13,7 +13,7 @@ export default function QuestionSetsPage() {
       createLabel="Create Question Set"
       createHref="/content/question-sets/create"
       description="Build and review quiz collections tied to units and gameplay modes."
-      loader={questionSetApi.getQuestionSets}
+      loader={questionSetsService.getQuestionSets}
       searchPlaceholder="Search question sets..."
       title="Question Sets"
       topNote={

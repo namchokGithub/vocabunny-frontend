@@ -1,8 +1,8 @@
 "use client";
 
-import { unitColumns } from "@/components/content/column-definitions";
+import { unitColumns } from "@/components/content/units/unit-columns";
 import { ContentListPage } from "@/components/content/content-list-page";
-import { contentApi } from "@/lib/api";
+import { unitsService } from "@/lib/services/content/units.service";
 
 export default function UnitsPage() {
   return (
@@ -10,7 +10,7 @@ export default function UnitsPage() {
       columns={unitColumns}
       createLabel="Create Unit"
       description="Manage units and vocabulary volume inside each lesson."
-      loader={contentApi.getUnits}
+      loader={unitsService.getUnits}
       searchPlaceholder="Search units..."
       title="Units"
     />

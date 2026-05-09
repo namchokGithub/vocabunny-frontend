@@ -1,6 +1,6 @@
 "use client";
 
-import { sectionColumns } from "@/components/content/column-definitions";
+import { sectionColumns } from "@/components/content/sections/section-columns";
 import { ContentListPage } from "@/components/content/content-list-page";
 import { sectionsService } from "@/lib/services/content/sections.service";
 

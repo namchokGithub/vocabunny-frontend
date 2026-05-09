@@ -1,6 +1,6 @@
 "use client";
 
-import { lessonColumns } from "@/components/content/column-definitions";
+import { lessonColumns } from "@/components/content/lessons/lesson-columns";
 import { ContentListPage } from "@/components/content/content-list-page";
 import { lessonsService } from "@/lib/services/content/lessons.service";
 
