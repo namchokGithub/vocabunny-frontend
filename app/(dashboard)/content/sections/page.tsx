@@ -15,6 +15,10 @@ export default function SectionsPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [editingSection, setEditingSection] = useState<Section | null>(null);
   const [deletingSection, setDeletingSection] = useState<Section | null>(null);
+  const [search, setSearch] = useState("");
+  const [publishedFilter, setPublishedFilter] = useState<boolean | undefined>(
+    undefined,
+  );
 
   async function handleDeleteConfirm() {
     if (!deletingSection) {
@@ -52,6 +56,17 @@ export default function SectionsPage() {
       <ContentListPage
         key={refreshKey}
         columns={columns}
+        showRowNumber={true}
+        searchValue={search}
+        onSearchChange={setSearch}
+        loader={() =>
+          sectionsService.getSections({
+            search,
+            is_published: publishedFilter,
+          })
+        }
+        publishedFilter={publishedFilter}
+        onPublishedFilterChange={setPublishedFilter}
         createAction={
           <CreateSectionDialog
             onCreated={() => setRefreshKey((current) => current + 1)}
@@ -59,7 +74,6 @@ export default function SectionsPage() {
         }
         createLabel="Create Section"
         description="Manage top-level learning sections used to organize the learner journey."
-        loader={sectionsService.getSections}
         searchPlaceholder="Search sections..."
         title="Sections"
       />
