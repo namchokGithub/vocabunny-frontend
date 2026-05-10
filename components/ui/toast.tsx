@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, CircleAlert, X } from "lucide-react";
+import { CheckCircle2, CircleAlert, TriangleAlert, X } from "lucide-react";
 import {
   createContext,
   useCallback,
@@ -12,7 +12,7 @@ import {
 
 import { GhostButton } from "@/components/ui/button";
 
-type ToastVariant = "success" | "error";
+type ToastVariant = "success" | "error" | "warning";
 
 interface ToastItem {
   id: number;
@@ -30,11 +30,13 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 const toastStyles: Record<ToastVariant, string> = {
   success: "border-emerald-200 bg-white text-slate-900",
   error: "border-rose-200 bg-white text-slate-900",
+  warning: "border-amber-200 bg-white text-slate-900",
 };
 
-const toastIcons = {
+const toastIcons: Record<ToastVariant, React.ReactNode> = {
   success: <CheckCircle2 className="h-5 w-5 text-emerald-500" />,
   error: <CircleAlert className="h-5 w-5 text-rose-500" />,
+  warning: <TriangleAlert className="h-5 w-5 text-amber-500" />,
 };
 
 export function ToastProvider({ children }: PropsWithChildren) {

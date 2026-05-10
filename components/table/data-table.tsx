@@ -4,10 +4,14 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
+type ColumnAlign = "left" | "center" | "right";
+
 export interface Column<T> {
   key: string;
   header: string;
   className?: string;
+  width?: string;
+  align?: ColumnAlign;
   render?: (row: T) => ReactNode;
 }
 
@@ -17,7 +21,14 @@ interface DataTableProps<T> {
   emptyTitle?: string;
   emptyDescription?: string;
   showRowNumber?: boolean;
+  getRowKey?: (row: T) => string;
 }
+
+const alignClass: Record<ColumnAlign, string> = {
+  left: "text-left",
+  center: "text-center",
+  right: "text-right",
+};
 
 export function DataTable<T>({
   columns,
@@ -25,6 +36,7 @@ export function DataTable<T>({
   emptyTitle = "No records yet",
   emptyDescription = "Data will appear here once your team starts creating records.",
   showRowNumber = false,
+  getRowKey,
 }: DataTableProps<T>) {
   if (!rows.length) {
     return <EmptyState description={emptyDescription} title={emptyTitle} />;
@@ -44,7 +56,11 @@ export function DataTable<T>({
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className="px-4 py-3 text-left text-xs font-semibold tracking-[0.12em] text-slate-500 uppercase"
+                  className={cn(
+                    "px-4 py-3 text-xs font-semibold tracking-[0.12em] text-slate-500 uppercase",
+                    column.align ? alignClass[column.align] : "text-left",
+                  )}
+                  style={column.width ? { width: column.width } : undefined}
                 >
                   {column.header}
                 </th>
@@ -53,7 +69,10 @@ export function DataTable<T>({
           </thead>
           <tbody className="divide-y divide-(--border)">
             {rows.map((row, index) => (
-              <tr key={index} className="hover:bg-slate-50/80">
+              <tr
+                key={getRowKey ? getRowKey(row) : String(index)}
+                className="hover:bg-slate-50/80"
+              >
                 {showRowNumber ? (
                   <td className="px-4 py-3 text-sm text-slate-700">
                     {index + 1}
@@ -64,6 +83,7 @@ export function DataTable<T>({
                     key={column.key}
                     className={cn(
                       "px-4 py-3 text-sm text-slate-700",
+                      column.align ? alignClass[column.align] : undefined,
                       column.className,
                     )}
                   >

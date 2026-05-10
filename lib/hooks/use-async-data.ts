@@ -18,6 +18,12 @@ export function useAsyncData<T>(loader: () => Promise<T>) {
   useEffect(() => {
     let isActive = true;
 
+    setState((current) => ({
+      data: current.data,
+      isLoading: true,
+      error: null,
+    }));
+
     loader()
       .then((data) => {
         if (isActive) {

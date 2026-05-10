@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
 
@@ -32,8 +32,12 @@ interface ContentListPageProps<T> {
   showRowNumber?: boolean;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
+  onSearchApply?: (value: string) => void;
   publishedFilter?: boolean | undefined;
   onPublishedFilterChange?: (value: boolean | undefined) => void;
+  page?: number;
+  onPageChange?: (page: number) => void;
+  getRowKey?: (row: T) => string;
 }
 
 export function ContentListPage<T>({
@@ -50,25 +54,90 @@ export function ContentListPage<T>({
   showRowNumber = false,
   searchValue,
   onSearchChange,
+  onSearchApply,
   publishedFilter,
   onPublishedFilterChange,
+  page: controlledPage,
+  onPageChange,
+  getRowKey,
 }: ContentListPageProps<T>) {
-  const [page, setPage] = useState(1);
+  const isControlled = controlledPage !== undefined;
+  const [internalPage, setInternalPage] = useState(1);
+
+  // Reset internal page when search or filter changes (React "adjust state on prop change" pattern).
+  // Calling setState during render triggers an immediate re-render without the effect cascade.
+  const [prevSearch, setPrevSearch] = useState(searchValue);
+  const [prevFilter, setPrevFilter] = useState(publishedFilter);
+  if (
+    (prevSearch !== searchValue || prevFilter !== publishedFilter) &&
+    !isControlled
+  ) {
+    setPrevSearch(searchValue);
+    setPrevFilter(publishedFilter);
+    setInternalPage(1);
+  }
+
+  const activePage = isControlled ? controlledPage : internalPage;
+
+  function handlePageChange(p: number) {
+    if (!isControlled) setInternalPage(p);
+    onPageChange?.(p);
+  }
+
   const [filterOpen, setFilterOpen] = useState(false);
+
+  const [draftSearch, setDraftSearch] = useState(searchValue ?? "");
+  const [prevAppliedSearch, setPrevAppliedSearch] = useState(searchValue ?? "");
+  if (prevAppliedSearch !== (searchValue ?? "")) {
+    setPrevAppliedSearch(searchValue ?? "");
+    setDraftSearch(searchValue ?? "");
+  }
+
+  const isSearchDirty = draftSearch !== (searchValue ?? "");
+
+  useEffect(() => {
+    if (draftSearch !== "") {
+      return;
+    }
+
+    const shouldAutoApply = (searchValue ?? "") !== "";
+    if (!shouldAutoApply) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      onSearchChange?.("");
+      onSearchApply?.("");
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [draftSearch, onSearchApply, onSearchChange, searchValue]);
+
+  function handleDraftSearchChange(value: string) {
+    setDraftSearch(value);
+    onSearchChange?.(value);
+  }
+
+  function handleSearchApply() {
+    onSearchChange?.(draftSearch);
+    onSearchApply?.(draftSearch);
+  }
+
   const paginatedLoader = useCallback(
     () =>
       loader({
-        page,
+        page: activePage,
         limit: defaultPageSize,
       }),
-    [defaultPageSize, loader, page],
+    [defaultPageSize, loader, activePage],
   );
-  const [draftSearch, setDraftSearch] = useState(searchValue ?? "");
-  const isSearchDirty = draftSearch !== (searchValue ?? "");
+
   const { data, isLoading, error } = useAsyncData(paginatedLoader);
   const createButton = <PrimaryButton>{createLabel}</PrimaryButton>;
   const paging = data?.paging;
-  const hasPreviousPage = (paging?.page ?? page) > 1;
+  const hasPreviousPage = (paging?.page ?? activePage) > 1;
   const hasNextPage = paging ? paging.page < paging.total_pages : false;
 
   return (
@@ -78,8 +147,6 @@ export function ContentListPage<T>({
         description={description}
         actions={
           <>
-            {/* <SecondaryButton>Export</SecondaryButton> */}
-
             {createAction ? (
               createAction
             ) : createHref ? (
@@ -99,7 +166,13 @@ export function ContentListPage<T>({
             <SearchInput
               placeholder={searchPlaceholder}
               value={draftSearch}
-              onChange={(event) => setDraftSearch(event.target.value)}
+              onChange={(event) => handleDraftSearchChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  handleSearchApply();
+                }
+              }}
             />
             <PrimaryButton
               className={cn(
@@ -107,7 +180,7 @@ export function ContentListPage<T>({
                 isSearchDirty &&
                   "scale-[1.03] border border-(--green-500) bg-green-500! shadow-lg ring-2 shadow-green-500/20 outline-none! hover:bg-green-600!",
               )}
-              onClick={() => onSearchChange?.(draftSearch)}
+              onClick={handleSearchApply}
             >
               Search
             </PrimaryButton>
@@ -129,7 +202,6 @@ export function ContentListPage<T>({
                     className="w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-slate-100"
                     onClick={() => {
                       onPublishedFilterChange?.(undefined);
-
                       setFilterOpen(false);
                     }}
                   >
@@ -140,7 +212,6 @@ export function ContentListPage<T>({
                     className="w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-slate-100"
                     onClick={() => {
                       onPublishedFilterChange?.(true);
-
                       setFilterOpen(false);
                     }}
                   >
@@ -151,7 +222,6 @@ export function ContentListPage<T>({
                     className="w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-slate-100"
                     onClick={() => {
                       onPublishedFilterChange?.(false);
-
                       setFilterOpen(false);
                     }}
                   >
@@ -172,14 +242,14 @@ export function ContentListPage<T>({
             <div className="flex gap-2">
               <SecondaryButton
                 disabled={!hasPreviousPage || isLoading}
-                onClick={() => setPage((current) => current - 1)}
+                onClick={() => handlePageChange(activePage - 1)}
               >
                 Prev
               </SecondaryButton>
 
               <SecondaryButton
                 disabled={!hasNextPage || isLoading}
-                onClick={() => setPage((current) => current + 1)}
+                onClick={() => handlePageChange(activePage + 1)}
               >
                 Next
               </SecondaryButton>
@@ -199,6 +269,7 @@ export function ContentListPage<T>({
           columns={columns}
           rows={data?.items ?? []}
           showRowNumber={showRowNumber}
+          getRowKey={getRowKey}
         />
       )}
     </div>

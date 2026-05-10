@@ -26,15 +26,12 @@ export function SectionRowActions({
   return (
     <div className="flex items-center gap-2">
       <SecondaryButton
+        isLoading={isEditing}
         disabled={isEditing || isDeleting}
         className="h-9 px-3"
         onClick={async () => {
-          if (!onEdit) {
-            return;
-          }
-
+          if (!onEdit) return;
           setIsEditing(true);
-
           try {
             await onEdit(section);
           } finally {
@@ -42,20 +39,17 @@ export function SectionRowActions({
           }
         }}
       >
-        <Pencil className="mr-2 h-4 w-4" />
-        {isEditing ? "Opening..." : "Edit"}
+        <Pencil className="h-4 w-4" />
+        Edit
       </SecondaryButton>
 
       <DangerButton
+        isLoading={isDeleting}
         disabled={isEditing || isDeleting}
         className="h-9 px-3"
         onClick={async () => {
-          if (!onDelete) {
-            return;
-          }
-
+          if (!onDelete) return;
           setIsDeleting(true);
-
           try {
             await onDelete(section);
           } finally {
@@ -63,8 +57,8 @@ export function SectionRowActions({
           }
         }}
       >
-        <Trash2 className="mr-2 h-4 w-4" />
-        {isDeleting ? "Working..." : "Delete"}
+        <Trash2 className="h-4 w-4" />
+        Delete
       </DangerButton>
     </div>
   );

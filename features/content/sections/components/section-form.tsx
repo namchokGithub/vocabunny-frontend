@@ -43,6 +43,20 @@ export const defaultSectionFormValues: SectionFormValues = {
   isPublished: false,
 };
 
+export function normalizeSectionTitle(value: string) {
+  return value.replace(/[^A-Za-z0-9 -]+/g, "");
+}
+
+export function normalizeSectionSlug(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]+/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export function validateSectionForm(
   values: SectionFormValues,
 ): SectionFormErrors {
@@ -50,6 +64,8 @@ export function validateSectionForm(
 
   if (!values.title.trim()) {
     errors.title = "Title is required.";
+  } else if (!/^[A-Za-z0-9 -]+$/.test(values.title.trim())) {
+    errors.title = "Use English letters, numbers, spaces, and hyphens only.";
   }
 
   if (!values.slug.trim()) {
@@ -86,7 +102,7 @@ export function SectionForm({
           error={errors.title}
           label="Title"
           onChange={(event) => onChange("title", event.target.value)}
-          placeholder="Beginner Vocabulary"
+          placeholder="Beginner Vocab"
           value={values.title}
         />
         <FormField

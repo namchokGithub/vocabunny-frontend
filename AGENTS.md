@@ -69,3 +69,21 @@
 - incremental improvements only
 - avoid giant components/files
 - avoid unnecessary abstractions
+
+## Query State
+
+- query state belongs to page/container components
+- shared components must remain presentation-focused
+- search/filter/pagination state should not live inside DataTable
+
+## Async UX
+
+- mutations should provide loading feedback
+- destructive actions should use confirmation dialogs
+- success/error flows should use toast notifications
+
+## Data Fetching
+
+- avoid duplicate fetch logic
+- prefer reusable hooks for async loading patterns
+- avoid direct fetch calls inside UI components

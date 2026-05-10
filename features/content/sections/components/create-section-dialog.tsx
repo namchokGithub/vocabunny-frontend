@@ -1,12 +1,14 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { useId, useState } from "react";
 
 import { PrimaryButton, SecondaryButton } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import {
   SectionForm,
   defaultSectionFormValues,
+  normalizeSectionSlug,
+  normalizeSectionTitle,
   validateSectionForm,
   type SectionFormErrors,
   type SectionFormValues,
@@ -23,6 +25,7 @@ export function CreateSectionDialog({ onCreated }: CreateSectionDialogProps) {
   const [open, setOpen] = useState(false);
   const [, setRefreshKey] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
   const [values, setValues] = useState<SectionFormValues>(
     defaultSectionFormValues,
   );
@@ -32,12 +35,32 @@ export function CreateSectionDialog({ onCreated }: CreateSectionDialogProps) {
     key: K,
     value: SectionFormValues[K],
   ) {
-    setValues((current) => ({ ...current, [key]: value }));
+    setValues((current) => {
+      if (key === "title") {
+        const nextTitle = normalizeSectionTitle(String(value));
+        const nextValues = { ...current, title: nextTitle };
+
+        if (!isSlugManuallyEdited) {
+          nextValues.slug = normalizeSectionSlug(nextTitle);
+        }
+
+        return nextValues;
+      }
+
+      if (key === "slug") {
+        const nextSlug = normalizeSectionSlug(String(value));
+        setIsSlugManuallyEdited(nextSlug !== normalizeSectionSlug(current.title));
+        return { ...current, slug: nextSlug };
+      }
+
+      return { ...current, [key]: value };
+    });
   }
 
   function resetForm() {
     setValues(defaultSectionFormValues);
     setErrors({});
+    setIsSlugManuallyEdited(false);
   }
 
   function handleClose() {
@@ -49,7 +72,7 @@ export function CreateSectionDialog({ onCreated }: CreateSectionDialogProps) {
     resetForm();
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const nextErrors = validateSectionForm(values);
@@ -135,11 +158,11 @@ export function CreateSectionDialog({ onCreated }: CreateSectionDialogProps) {
                 Cancel
               </SecondaryButton>
               <PrimaryButton
-                disabled={isSubmitting}
+                isLoading={isSubmitting}
                 form={formId}
                 type="submit"
               >
-                {isSubmitting ? "Creating..." : "Create Section"}
+                Create Section
               </PrimaryButton>
             </div>
           </div>

@@ -38,11 +38,15 @@ export function createSectionColumns({
     {
       key: "order_no",
       header: "Order",
+      width: "80px",
+      align: "center",
       render: (section) => section.order_no,
     },
     {
       key: "is_published",
       header: "Status",
+      width: "120px",
+      align: "center",
       render: (section) => (
         <SectionStatusBadge isPublished={section.is_published} />
       ),
@@ -50,11 +54,14 @@ export function createSectionColumns({
     {
       key: "updated_at",
       header: "Updated At",
+      width: "140px",
       render: (section) => new Date(section.updated_at).toLocaleDateString(),
     },
     {
       key: "actions",
       header: "Actions",
+      width: "160px",
+      align: "right",
       render: (section) => (
         <SectionRowActions
           section={section}

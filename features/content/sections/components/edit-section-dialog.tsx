@@ -7,6 +7,8 @@ import { useToast } from "@/components/ui/toast";
 import {
   SectionForm,
   defaultSectionFormValues,
+  normalizeSectionSlug,
+  normalizeSectionTitle,
   validateSectionForm,
   type SectionFormErrors,
   type SectionFormValues,
@@ -62,6 +64,22 @@ export function EditSectionDialog({
     key: K,
     value: SectionFormValues[K],
   ) {
+    if (key === "title") {
+      setValues((current) => ({
+        ...current,
+        title: normalizeSectionTitle(String(value)),
+      }));
+      return;
+    }
+
+    if (key === "slug") {
+      setValues((current) => ({
+        ...current,
+        slug: normalizeSectionSlug(String(value)),
+      }));
+      return;
+    }
+
     setValues((current) => ({ ...current, [key]: value }));
   }
 
@@ -156,8 +174,8 @@ export function EditSectionDialog({
             <SecondaryButton disabled={isSubmitting} onClick={handleClose}>
               Cancel
             </SecondaryButton>
-            <PrimaryButton disabled={isSubmitting} form={formId} type="submit">
-              {isSubmitting ? "Saving..." : "Save Changes"}
+            <PrimaryButton isLoading={isSubmitting} form={formId} type="submit">
+              Save Changes
             </PrimaryButton>
           </div>
         </div>
