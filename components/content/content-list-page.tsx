@@ -22,6 +22,8 @@ import { useAsyncData } from "@/lib/hooks/use-async-data";
 import type { PaginatedResult, PaginationParams } from "@/types/pagination";
 import { cn } from "@/lib/utils";
 
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
+
 interface ContentListPageProps<T> {
   title: string;
   description: string;
@@ -41,6 +43,8 @@ interface ContentListPageProps<T> {
   onPublishedFilterChange?: (value: boolean | undefined) => void;
   page?: number;
   onPageChange?: (page: number) => void;
+  limit?: number;
+  onLimitChange?: (limit: number) => void;
   getRowKey?: (row: T) => string;
   sortKey?: string;
   sortDirection?: SortDirection;
@@ -67,6 +71,8 @@ export function ContentListPage<T>({
   onPublishedFilterChange,
   page: controlledPage,
   onPageChange,
+  limit,
+  onLimitChange,
   getRowKey,
   sortKey,
   sortDirection,
@@ -77,7 +83,6 @@ export function ContentListPage<T>({
   const [internalPage, setInternalPage] = useState(1);
 
   // Reset internal page when search or filter changes (React "adjust state on prop change" pattern).
-  // Calling setState during render triggers an immediate re-render without the effect cascade.
   const [prevSearch, setPrevSearch] = useState(searchValue);
   const [prevFilter, setPrevFilter] = useState(publishedFilter);
   if (
@@ -90,6 +95,7 @@ export function ContentListPage<T>({
   }
 
   const activePage = isControlled ? controlledPage : internalPage;
+  const activeLimit = limit ?? defaultPageSize;
 
   function handlePageChange(p: number) {
     if (!isControlled) setInternalPage(p);
@@ -140,9 +146,9 @@ export function ContentListPage<T>({
   const paginatedLoader = useCallback(
     () => {
       void refreshSignal; // included to trigger a re-fetch when parent signals a data change
-      return loader({ page: activePage, limit: defaultPageSize });
+      return loader({ page: activePage, limit: activeLimit });
     },
-    [defaultPageSize, loader, activePage, refreshSignal],
+    [loader, activePage, activeLimit, refreshSignal],
   );
 
   const { data, isLoading, error } = useAsyncData(paginatedLoader);
@@ -274,6 +280,20 @@ export function ContentListPage<T>({
                 ? `Page ${paging.page} of ${paging.total_pages} • ${paging.total} records`
                 : "Loading pagination..."}
             </span>
+
+            {onLimitChange ? (
+              <select
+                className="rounded-xl border border-(--border-strong) bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-slate-200"
+                value={activeLimit}
+                onChange={(e) => onLimitChange(Number(e.target.value))}
+              >
+                {PAGE_SIZE_OPTIONS.map((size) => (
+                  <option key={size} value={size}>
+                    {size} / page
+                  </option>
+                ))}
+              </select>
+            ) : null}
 
             <div className="flex gap-2">
               <SecondaryButton

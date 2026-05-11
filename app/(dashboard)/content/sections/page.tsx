@@ -13,8 +13,11 @@ import type { Section } from "@/lib/api/content/sections";
 import { sectionsService } from "@/lib/services/content/sections.service";
 import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import type { PaginationParams } from "@/types/pagination";
 
 const SECTION_SORT_KEYS = ["title", "order_no", "updated_at", "is_published"] as const;
+const PAGE_SIZES = [10, 20, 50, 100] as const;
+const DEFAULT_PAGE_SIZE = 10;
 
 function isSectionSortKey(value: string | null): value is (typeof SECTION_SORT_KEYS)[number] {
   return value !== null && SECTION_SORT_KEYS.includes(value as (typeof SECTION_SORT_KEYS)[number]);
@@ -22,6 +25,10 @@ function isSectionSortKey(value: string | null): value is (typeof SECTION_SORT_K
 
 function isSortDirection(value: string | null): value is SortDirection {
   return value === "asc" || value === "desc";
+}
+
+function isPageSize(value: number): value is (typeof PAGE_SIZES)[number] {
+  return (PAGE_SIZES as readonly number[]).includes(value);
 }
 
 function SectionsPageContent() {
@@ -32,18 +39,16 @@ function SectionsPageContent() {
   const initialSortParam = searchParams.get("sort");
   const initialDirectionParam = searchParams.get("direction");
 
-  // Initialize state from URL params
+  // Initialize all query state from URL params
   const [search, setSearchState] = useState(searchParams.get("search") ?? "");
-  const [publishedFilter, setPublishedFilterState] = useState<
-    boolean | undefined
-  >(
+  const [publishedFilter, setPublishedFilterState] = useState<boolean | undefined>(
     searchParams.has("published")
       ? searchParams.get("published") === "true"
       : undefined,
   );
-  const [page, setPageState] = useState(
-    Number(searchParams.get("page") ?? "1"),
-  );
+  const [page, setPageState] = useState(Number(searchParams.get("page") ?? "1"));
+  const rawLimit = Number(searchParams.get("limit") ?? String(DEFAULT_PAGE_SIZE));
+  const [limit, setLimitState] = useState<number>(isPageSize(rawLimit) ? rawLimit : DEFAULT_PAGE_SIZE);
   const [sortKey, setSortKey] = useState<string | undefined>(
     isSectionSortKey(initialSortParam) ? initialSortParam : undefined,
   );
@@ -59,6 +64,7 @@ function SectionsPageContent() {
     s: string,
     pub: boolean | undefined,
     pg: number,
+    lim: number,
     sort?: string,
     direction?: SortDirection,
   ) {
@@ -66,46 +72,46 @@ function SectionsPageContent() {
     if (s) params.set("search", s);
     if (pub !== undefined) params.set("published", String(pub));
     if (pg > 1) params.set("page", String(pg));
+    if (lim !== DEFAULT_PAGE_SIZE) params.set("limit", String(lim));
     if (sort) params.set("sort", sort);
     if (sort && direction) params.set("direction", direction);
     const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, {
-      scroll: false,
-    });
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }
 
   function handleSearchApply(value: string) {
     setSearchState(value);
-
     setPageState(1);
-
-    syncURL(value, publishedFilter, 1, sortKey, sortDirection);
+    syncURL(value, publishedFilter, 1, limit, sortKey, sortDirection);
   }
 
   function handlePublishedFilterChange(value: boolean | undefined) {
     setPublishedFilterState(value);
     setPageState(1);
-    syncURL(search, value, 1, sortKey, sortDirection);
+    syncURL(search, value, 1, limit, sortKey, sortDirection);
   }
 
   function handlePageChange(value: number) {
     setPageState(value);
-    syncURL(search, publishedFilter, value, sortKey, sortDirection);
+    syncURL(search, publishedFilter, value, limit, sortKey, sortDirection);
   }
 
-  function handleSortChange(
-    nextSortKey?: string,
-    nextSortDirection?: SortDirection,
-  ) {
+  function handleLimitChange(value: number) {
+    setLimitState(value);
+    setPageState(1);
+    syncURL(search, publishedFilter, 1, value, sortKey, sortDirection);
+  }
+
+  function handleSortChange(nextSortKey?: string, nextSortDirection?: SortDirection) {
     setSortKey(nextSortKey);
     setSortDirection(nextSortDirection);
     setPageState(1);
-    syncURL(search, publishedFilter, 1, nextSortKey, nextSortDirection);
+    syncURL(search, publishedFilter, 1, limit, nextSortKey, nextSortDirection);
   }
 
   function triggerRefresh() {
     setPageState(1);
-    syncURL(search, publishedFilter, 1, sortKey, sortDirection);
+    syncURL(search, publishedFilter, 1, limit, sortKey, sortDirection);
     setRefreshKey((current) => current + 1);
   }
 
@@ -124,12 +130,8 @@ function SectionsPageContent() {
   const columns = useMemo(
     () =>
       createSectionColumns({
-        onEdit: async (section) => {
-          setEditingSection(section);
-        },
-        onDelete: async (section) => {
-          setDeletingSection(section);
-        },
+        onEdit: async (section) => setEditingSection(section),
+        onDelete: async (section) => setDeletingSection(section),
       }),
     [],
   );
@@ -142,19 +144,23 @@ function SectionsPageContent() {
         showRowNumber={true}
         searchValue={search}
         onSearchApply={handleSearchApply}
-        loader={() =>
+        loader={(params?: PaginationParams) =>
           sectionsService.getSections({
+            page: params?.page,
+            limit: params?.limit,
             search: search.trim() || undefined,
             is_published: publishedFilter,
             sort_by: sortKey,
             sort_order:
               sortKey && sortDirection
-                ? sortDirection.toUpperCase() as "ASC" | "DESC"
+                ? (sortDirection.toUpperCase() as "ASC" | "DESC")
                 : undefined,
           })
         }
         page={page}
         onPageChange={handlePageChange}
+        limit={limit}
+        onLimitChange={handleLimitChange}
         sortKey={sortKey}
         sortDirection={sortDirection}
         onSortChange={handleSortChange}
