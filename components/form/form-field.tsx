@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import type {
   InputHTMLAttributes,
   PropsWithChildren,
+  SelectHTMLAttributes,
   TextareaHTMLAttributes,
 } from "react";
 
@@ -75,4 +76,37 @@ export function TextareaField({
 
 export function FormSection({ children }: PropsWithChildren) {
   return <div className="grid gap-5 md:grid-cols-2">{children}</div>;
+}
+
+type SelectProps = BaseFieldProps & SelectHTMLAttributes<HTMLSelectElement>;
+
+export function SelectField({
+  label,
+  hint,
+  className,
+  error,
+  required,
+  children,
+  ...props
+}: PropsWithChildren<SelectProps>) {
+  return (
+    <label className={cn("flex flex-col gap-2", className)}>
+      <span className="text-sm font-semibold text-slate-800">
+        {label} {required ? <span className="text-red-500">*</span> : null}
+      </span>
+      <select
+        className={cn(
+          "rounded-xl border bg-white px-3 py-2.5 text-sm transition outline-none focus:border-(--primary)",
+          error ? "border-rose-300" : "border-(--border)",
+        )}
+        {...props}
+      >
+        {children}
+      </select>
+      {error ? <span className="text-xs text-rose-600">{error}</span> : null}
+      {!error && hint ? (
+        <span className="text-xs text-slate-500">{hint}</span>
+      ) : null}
+    </label>
+  );
 }

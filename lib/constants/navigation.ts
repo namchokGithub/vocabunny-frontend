@@ -18,6 +18,7 @@ export const sidebarNavigation: NavItem[] = [
       { title: "Units", href: "/content/units" },
       { title: "Question Sets", href: "/content/question-sets" },
       { title: "Questions", href: "/content/questions" },
+      { title: "Tags", href: "/content/tags" },
     ],
   },
   {

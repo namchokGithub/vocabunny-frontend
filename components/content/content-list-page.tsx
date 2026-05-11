@@ -50,6 +50,7 @@ interface ContentListPageProps<T> {
   sortDirection?: SortDirection;
   onSortChange?: (sortKey?: string, direction?: SortDirection) => void;
   refreshSignal?: number;
+  filterLabels?: { trueLabel: string; falseLabel: string };
 }
 
 export function ContentListPage<T>({
@@ -78,6 +79,7 @@ export function ContentListPage<T>({
   sortDirection,
   onSortChange,
   refreshSignal,
+  filterLabels,
 }: ContentListPageProps<T>) {
   const isControlled = controlledPage !== undefined;
   const [internalPage, setInternalPage] = useState(1);
@@ -209,9 +211,9 @@ export function ContentListPage<T>({
                 onClick={() => setFilterOpen((current) => !current)}
               >
                 {publishedFilter === true
-                  ? "Published"
+                  ? (filterLabels?.trueLabel ?? "Published")
                   : publishedFilter === false
-                    ? "Draft"
+                    ? (filterLabels?.falseLabel ?? "Draft")
                     : "Filters"}
               </SecondaryButton>
 
@@ -234,7 +236,7 @@ export function ContentListPage<T>({
                       setFilterOpen(false);
                     }}
                   >
-                    Published
+                    {filterLabels?.trueLabel ?? "Published"}
                   </button>
 
                   <button
@@ -244,7 +246,7 @@ export function ContentListPage<T>({
                       setFilterOpen(false);
                     }}
                   >
-                    Draft
+                    {filterLabels?.falseLabel ?? "Draft"}
                   </button>
                 </div>
               ) : null}
