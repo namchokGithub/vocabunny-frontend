@@ -3,6 +3,7 @@
 import type { Column } from "@/components/table/data-table";
 import { SectionStatusBadge } from "@/features/content/sections/components/section-status-badge";
 import type { Section } from "@/lib/api/content/sections";
+import { formatDateTime } from "@/lib/utils";
 import { SectionRowActions } from "./section-row-actions";
 
 interface CreateSectionColumnsOptions {
@@ -60,10 +61,10 @@ export function createSectionColumns({
     {
       key: "updated_at",
       header: "Updated At",
-      width: "140px",
+      width: "180px",
       sortable: true,
       sortKey: "updated_at",
-      render: (section) => new Date(section.updated_at).toLocaleDateString(),
+      render: (section) => formatDateTime(section.updated_at),
     },
     {
       key: "actions",

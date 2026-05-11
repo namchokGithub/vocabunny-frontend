@@ -2,6 +2,7 @@
 
 import type { Column } from "@/components/table/data-table";
 import type { Lesson } from "@/lib/api/content/lessons";
+import { formatDateTime } from "@/lib/utils";
 
 export const lessonColumns: Column<Lesson>[] = [
   {
@@ -31,6 +32,6 @@ export const lessonColumns: Column<Lesson>[] = [
   {
     key: "updated_at",
     header: "Updated At",
-    render: (lesson) => new Date(lesson.updated_at).toLocaleDateString(),
+    render: (lesson) => formatDateTime(lesson.updated_at),
   },
 ];

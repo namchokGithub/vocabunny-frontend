@@ -2,6 +2,7 @@
 
 import type { Column } from "@/components/table/data-table";
 import type { Question } from "@/lib/api/content/questions";
+import { formatDateTime } from "@/lib/utils";
 
 export const questionColumns: Column<Question>[] = [
   {
@@ -35,6 +36,6 @@ export const questionColumns: Column<Question>[] = [
   {
     key: "updated_at",
     header: "Updated At",
-    render: (question) => new Date(question.updated_at).toLocaleDateString(),
+    render: (question) => formatDateTime(question.updated_at),
   },
 ];

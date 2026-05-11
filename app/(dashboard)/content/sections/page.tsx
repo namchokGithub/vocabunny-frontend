@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useCallback, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { ContentListPage } from "@/components/content/content-list-page";
@@ -15,7 +15,13 @@ import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { PaginationParams } from "@/types/pagination";
 
-const SECTION_SORT_KEYS = ["title", "order_no", "updated_at", "is_published"] as const;
+const SECTION_SORT_KEYS = [
+  "title",
+  "order_no",
+  "created_at",
+  "updated_at",
+  "is_published",
+] as const;
 const PAGE_SIZES = [10, 20, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -50,24 +56,24 @@ function SectionsPageContent() {
   const rawLimit = Number(searchParams.get("limit") ?? String(DEFAULT_PAGE_SIZE));
   const [limit, setLimitState] = useState<number>(isPageSize(rawLimit) ? rawLimit : DEFAULT_PAGE_SIZE);
   const [sortKey, setSortKey] = useState<string | undefined>(
-    isSectionSortKey(initialSortParam) ? initialSortParam : undefined,
+    isSectionSortKey(initialSortParam) ? initialSortParam : "created_at",
   );
   const [sortDirection, setSortDirection] = useState<SortDirection | undefined>(
-    isSortDirection(initialDirectionParam) ? initialDirectionParam : undefined,
+    isSortDirection(initialDirectionParam) ? initialDirectionParam : "desc",
   );
 
   const [refreshKey, setRefreshKey] = useState(0);
   const [editingSection, setEditingSection] = useState<Section | null>(null);
   const [deletingSection, setDeletingSection] = useState<Section | null>(null);
 
-  function syncURL(
+  const syncURL = useCallback((
     s: string,
     pub: boolean | undefined,
     pg: number,
     lim: number,
     sort?: string,
     direction?: SortDirection,
-  ) {
+  ) => {
     const params = new URLSearchParams();
     if (s) params.set("search", s);
     if (pub !== undefined) params.set("published", String(pub));
@@ -77,7 +83,7 @@ function SectionsPageContent() {
     if (sort && direction) params.set("direction", direction);
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
-  }
+  }, [pathname, router]);
 
   function handleSearchApply(value: string) {
     setSearchState(value);
@@ -108,6 +114,21 @@ function SectionsPageContent() {
     setPageState(1);
     syncURL(search, publishedFilter, 1, limit, nextSortKey, nextSortDirection);
   }
+
+  useEffect(() => {
+    if (isSectionSortKey(initialSortParam) && isSortDirection(initialDirectionParam)) {
+      return;
+    }
+
+    syncURL(
+      search,
+      publishedFilter,
+      page,
+      limit,
+      isSectionSortKey(initialSortParam) ? initialSortParam : "created_at",
+      isSortDirection(initialDirectionParam) ? initialDirectionParam : "desc",
+    );
+  }, [initialDirectionParam, initialSortParam, limit, page, publishedFilter, search, syncURL]);
 
   function triggerRefresh() {
     setPageState(1);

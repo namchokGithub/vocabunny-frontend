@@ -2,6 +2,7 @@
 
 import type { Column } from "@/components/table/data-table";
 import type { QuestionChoice } from "@/lib/api/content/question-choices";
+import { formatDateTime } from "@/lib/utils";
 
 export const questionChoiceColumns: Column<QuestionChoice>[] = [
   {
@@ -31,6 +32,6 @@ export const questionChoiceColumns: Column<QuestionChoice>[] = [
   {
     key: "updated_at",
     header: "Updated At",
-    render: (choice) => new Date(choice.updated_at).toLocaleDateString(),
+    render: (choice) => formatDateTime(choice.updated_at),
   },
 ];

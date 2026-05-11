@@ -2,6 +2,7 @@
 
 import type { Column } from "@/components/table/data-table";
 import type { Tag } from "@/lib/api/content/tags";
+import { formatDateTime } from "@/lib/utils";
 
 export const tagColumns: Column<Tag>[] = [
   {
@@ -32,6 +33,6 @@ export const tagColumns: Column<Tag>[] = [
   {
     key: "updated_at",
     header: "Updated At",
-    render: (tag) => new Date(tag.updated_at).toLocaleDateString(),
+    render: (tag) => formatDateTime(tag.updated_at),
   },
 ];

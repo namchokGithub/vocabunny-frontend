@@ -2,6 +2,7 @@
 
 import type { Column } from "@/components/table/data-table";
 import type { Unit } from "@/lib/api/content/units";
+import { formatDateTime } from "@/lib/utils";
 
 export const unitColumns: Column<Unit>[] = [
   {
@@ -31,6 +32,6 @@ export const unitColumns: Column<Unit>[] = [
   {
     key: "updated_at",
     header: "Updated At",
-    render: (unit) => new Date(unit.updated_at).toLocaleDateString(),
+    render: (unit) => formatDateTime(unit.updated_at),
   },
 ];

@@ -51,7 +51,9 @@ export function CreateSectionDialog({ onCreated }: CreateSectionDialogProps) {
 
       if (key === "slug") {
         const nextSlug = normalizeSectionSlug(String(value));
-        setIsSlugManuallyEdited(nextSlug !== normalizeSectionSlug(current.title));
+        setIsSlugManuallyEdited(
+          nextSlug !== normalizeSectionSlug(current.title),
+        );
         return { ...current, slug: nextSlug };
       }
 
@@ -79,7 +81,8 @@ export function CreateSectionDialog({ onCreated }: CreateSectionDialogProps) {
       setValues(defaultSectionFormValues);
 
       try {
-        const { sections } = await contentOrderNosService.getLastContentOrderNos();
+        const { sections } =
+          await contentOrderNosService.getLastContentOrderNos();
 
         if (!isActive) {
           return;
@@ -87,7 +90,7 @@ export function CreateSectionDialog({ onCreated }: CreateSectionDialogProps) {
 
         setValues((current) => ({
           ...current,
-          orderNo: String(sections || 1),
+          orderNo: String(sections + 1 || 1),
         }));
       } catch (error) {
         if (!isActive) {
