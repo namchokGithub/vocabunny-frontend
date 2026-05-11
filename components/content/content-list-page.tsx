@@ -8,7 +8,11 @@ import { PageHeader } from "@/components/layout/page-header";
 
 import { LoadingTable } from "@/components/table/loading-table";
 
-import { DataTable, type Column } from "@/components/table/data-table";
+import {
+  DataTable,
+  type Column,
+  type SortDirection,
+} from "@/components/table/data-table";
 
 import { PrimaryButton, SecondaryButton } from "@/components/ui/button";
 
@@ -38,6 +42,9 @@ interface ContentListPageProps<T> {
   page?: number;
   onPageChange?: (page: number) => void;
   getRowKey?: (row: T) => string;
+  sortKey?: string;
+  sortDirection?: SortDirection;
+  onSortChange?: (sortKey?: string, direction?: SortDirection) => void;
 }
 
 export function ContentListPage<T>({
@@ -60,6 +67,9 @@ export function ContentListPage<T>({
   page: controlledPage,
   onPageChange,
   getRowKey,
+  sortKey,
+  sortDirection,
+  onSortChange,
 }: ContentListPageProps<T>) {
   const isControlled = controlledPage !== undefined;
   const [internalPage, setInternalPage] = useState(1);
@@ -270,6 +280,9 @@ export function ContentListPage<T>({
           rows={data?.items ?? []}
           showRowNumber={showRowNumber}
           getRowKey={getRowKey}
+          sortKey={sortKey}
+          sortDirection={sortDirection}
+          onSortChange={onSortChange}
         />
       )}
     </div>

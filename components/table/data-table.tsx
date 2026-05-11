@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
 type ColumnAlign = "left" | "center" | "right";
+export type SortDirection = "asc" | "desc";
 
 export interface Column<T> {
   key: string;
@@ -12,6 +13,8 @@ export interface Column<T> {
   className?: string;
   width?: string;
   align?: ColumnAlign;
+  sortable?: boolean;
+  sortKey?: string;
   render?: (row: T) => ReactNode;
 }
 
@@ -22,6 +25,9 @@ interface DataTableProps<T> {
   emptyDescription?: string;
   showRowNumber?: boolean;
   getRowKey?: (row: T) => string;
+  sortKey?: string;
+  sortDirection?: SortDirection;
+  onSortChange?: (sortKey?: string, direction?: SortDirection) => void;
 }
 
 const alignClass: Record<ColumnAlign, string> = {
@@ -30,6 +36,31 @@ const alignClass: Record<ColumnAlign, string> = {
   right: "text-right",
 };
 
+function SortIndicator({
+  active,
+  direction,
+}: {
+  active: boolean;
+  direction?: SortDirection;
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "inline-flex flex-col items-center justify-center text-[10px] leading-none text-slate-400 transition-colors",
+        active && "text-slate-700",
+      )}
+    >
+      <span className={cn(!active || direction === "asc" ? "opacity-100" : "opacity-35")}>
+        ▲
+      </span>
+      <span className={cn(!active || direction === "desc" ? "opacity-100" : "opacity-35")}>
+        ▼
+      </span>
+    </span>
+  );
+}
+
 export function DataTable<T>({
   columns,
   rows,
@@ -37,9 +68,32 @@ export function DataTable<T>({
   emptyDescription = "Data will appear here once your team starts creating records.",
   showRowNumber = false,
   getRowKey,
+  sortKey,
+  sortDirection,
+  onSortChange,
 }: DataTableProps<T>) {
   if (!rows.length) {
     return <EmptyState description={emptyDescription} title={emptyTitle} />;
+  }
+
+  function handleSortClick(column: Column<T>) {
+    if (!column.sortable || !column.sortKey || !onSortChange) {
+      return;
+    }
+
+    const isActive = sortKey === column.sortKey;
+
+    if (!isActive) {
+      onSortChange(column.sortKey, "asc");
+      return;
+    }
+
+    if (sortDirection === "asc") {
+      onSortChange(column.sortKey, "desc");
+      return;
+    }
+
+    onSortChange(undefined, undefined);
   }
 
   return (
@@ -62,7 +116,26 @@ export function DataTable<T>({
                   )}
                   style={column.width ? { width: column.width } : undefined}
                 >
-                  {column.header}
+                  {column.sortable && column.sortKey ? (
+                    <button
+                      className={cn(
+                        "inline-flex items-center gap-2 rounded-md px-1 py-1 transition-colors hover:text-slate-700",
+                        column.align === "center" && "mx-auto",
+                        column.align === "right" && "ml-auto",
+                        sortKey === column.sortKey && "text-slate-700",
+                      )}
+                      onClick={() => handleSortClick(column)}
+                      type="button"
+                    >
+                      <span>{column.header}</span>
+                      <SortIndicator
+                        active={sortKey === column.sortKey}
+                        direction={sortDirection}
+                      />
+                    </button>
+                  ) : (
+                    column.header
+                  )}
                 </th>
               ))}
             </tr>

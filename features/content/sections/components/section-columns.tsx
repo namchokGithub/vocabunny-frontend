@@ -18,6 +18,8 @@ export function createSectionColumns({
     {
       key: "title",
       header: "Title",
+      sortable: true,
+      sortKey: "title",
       render: (section) => (
         <div>
           <p className="font-semibold text-slate-900">{section.title || "-"}</p>
@@ -40,6 +42,8 @@ export function createSectionColumns({
       header: "Order",
       width: "80px",
       align: "center",
+      sortable: true,
+      sortKey: "order_no",
       render: (section) => section.order_no,
     },
     {
@@ -47,6 +51,8 @@ export function createSectionColumns({
       header: "Status",
       width: "120px",
       align: "center",
+      sortable: true,
+      sortKey: "is_published",
       render: (section) => (
         <SectionStatusBadge isPublished={section.is_published} />
       ),
@@ -55,6 +61,8 @@ export function createSectionColumns({
       key: "updated_at",
       header: "Updated At",
       width: "140px",
+      sortable: true,
+      sortKey: "updated_at",
       render: (section) => new Date(section.updated_at).toLocaleDateString(),
     },
     {

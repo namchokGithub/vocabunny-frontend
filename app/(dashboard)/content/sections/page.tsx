@@ -7,17 +7,30 @@ import { ContentListPage } from "@/components/content/content-list-page";
 import { CreateSectionDialog } from "@/features/content/sections/components/create-section-dialog";
 import { createSectionColumns } from "@/features/content/sections/components/section-columns";
 import { EditSectionDialog } from "@/features/content/sections/components/edit-section-dialog";
+import type { SortDirection } from "@/components/table/data-table";
 import { useToast } from "@/components/ui/toast";
 import type { Section } from "@/lib/api/content/sections";
 import { sectionsService } from "@/lib/services/content/sections.service";
 import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
+const SECTION_SORT_KEYS = ["title", "order_no", "updated_at", "is_published"] as const;
+
+function isSectionSortKey(value: string | null): value is (typeof SECTION_SORT_KEYS)[number] {
+  return value !== null && SECTION_SORT_KEYS.includes(value as (typeof SECTION_SORT_KEYS)[number]);
+}
+
+function isSortDirection(value: string | null): value is SortDirection {
+  return value === "asc" || value === "desc";
+}
+
 function SectionsPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
+  const initialSortParam = searchParams.get("sort");
+  const initialDirectionParam = searchParams.get("direction");
 
   // Initialize state from URL params
   const [search, setSearchState] = useState(searchParams.get("search") ?? "");
@@ -31,16 +44,30 @@ function SectionsPageContent() {
   const [page, setPageState] = useState(
     Number(searchParams.get("page") ?? "1"),
   );
+  const [sortKey, setSortKey] = useState<string | undefined>(
+    isSectionSortKey(initialSortParam) ? initialSortParam : undefined,
+  );
+  const [sortDirection, setSortDirection] = useState<SortDirection | undefined>(
+    isSortDirection(initialDirectionParam) ? initialDirectionParam : undefined,
+  );
 
   const [refreshKey, setRefreshKey] = useState(0);
   const [editingSection, setEditingSection] = useState<Section | null>(null);
   const [deletingSection, setDeletingSection] = useState<Section | null>(null);
 
-  function syncURL(s: string, pub: boolean | undefined, pg: number) {
+  function syncURL(
+    s: string,
+    pub: boolean | undefined,
+    pg: number,
+    sort?: string,
+    direction?: SortDirection,
+  ) {
     const params = new URLSearchParams();
     if (s) params.set("search", s);
     if (pub !== undefined) params.set("published", String(pub));
     if (pg > 1) params.set("page", String(pg));
+    if (sort) params.set("sort", sort);
+    if (sort && direction) params.set("direction", direction);
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, {
       scroll: false,
@@ -52,23 +79,33 @@ function SectionsPageContent() {
 
     setPageState(1);
 
-    syncURL(value, publishedFilter, 1);
+    syncURL(value, publishedFilter, 1, sortKey, sortDirection);
   }
 
   function handlePublishedFilterChange(value: boolean | undefined) {
     setPublishedFilterState(value);
     setPageState(1);
-    syncURL(search, value, 1);
+    syncURL(search, value, 1, sortKey, sortDirection);
   }
 
   function handlePageChange(value: number) {
     setPageState(value);
-    syncURL(search, publishedFilter, value);
+    syncURL(search, publishedFilter, value, sortKey, sortDirection);
+  }
+
+  function handleSortChange(
+    nextSortKey?: string,
+    nextSortDirection?: SortDirection,
+  ) {
+    setSortKey(nextSortKey);
+    setSortDirection(nextSortDirection);
+    setPageState(1);
+    syncURL(search, publishedFilter, 1, nextSortKey, nextSortDirection);
   }
 
   function triggerRefresh() {
     setPageState(1);
-    syncURL(search, publishedFilter, 1);
+    syncURL(search, publishedFilter, 1, sortKey, sortDirection);
     setRefreshKey((current) => current + 1);
   }
 
@@ -109,10 +146,18 @@ function SectionsPageContent() {
           sectionsService.getSections({
             search: search.trim() || undefined,
             is_published: publishedFilter,
+            sort_by: sortKey,
+            sort_order:
+              sortKey && sortDirection
+                ? sortDirection.toUpperCase() as "ASC" | "DESC"
+                : undefined,
           })
         }
         page={page}
         onPageChange={handlePageChange}
+        sortKey={sortKey}
+        sortDirection={sortDirection}
+        onSortChange={handleSortChange}
         publishedFilter={publishedFilter}
         onPublishedFilterChange={handlePublishedFilterChange}
         getRowKey={(section) => section.id}

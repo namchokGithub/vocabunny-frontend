@@ -1,7 +1,7 @@
 TODO
 
 - Section
-  - ~~Search~~, Ordering
+  - ~~Search~~, ~~Ordering~~
   - ~~Last Order Number when Create~~
   - ~~(API) re-order~~
     - ~~Warning when select new order~~
@@ -14,3 +14,4 @@ TODO
   - ~~URL Query Sync~~
   - ~~Table Column Width / Align~~
   - ~~Row Key~~
+-
