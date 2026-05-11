@@ -1,6 +1,7 @@
 "use client";
 
 import type { Column } from "@/components/table/data-table";
+import { TruncatedText } from "@/components/ui/truncated-text";
 import { SectionStatusBadge } from "@/features/content/sections/components/section-status-badge";
 import type { Section } from "@/lib/api/content/sections";
 import { formatDateTime } from "@/lib/utils";
@@ -33,9 +34,9 @@ export function createSectionColumns({
       header: "Description",
       className: "max-w-[360px]",
       render: (section) => (
-        <span className="line-clamp-2 text-slate-600">
+        <TruncatedText lines={2} className="text-slate-600">
           {section.description || "-"}
-        </span>
+        </TruncatedText>
       ),
     },
     {
