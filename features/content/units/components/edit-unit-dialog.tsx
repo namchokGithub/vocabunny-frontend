@@ -15,6 +15,7 @@ import {
 } from "@/features/content/units/components/unit-form";
 import type { Unit } from "@/lib/api/content/units";
 import { unitsService } from "@/lib/services/content/units.service";
+import { lessonsService } from "@/lib/services/content/lessons.service";
 
 interface EditUnitDialogProps {
   open: boolean;
@@ -38,6 +39,8 @@ export function EditUnitDialog({ open, unit, onClose, onUpdated }: EditUnitDialo
   const formId = useId();
   const { showToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingParents, setIsLoadingParents] = useState(false);
+  const [lessons, setLessons] = useState<{ id: string; title: string }[]>([]);
   const [values, setValues] = useState<UnitFormValues>(
     unit ? toUnitFormValues(unit) : defaultUnitFormValues,
   );
@@ -49,6 +52,27 @@ export function EditUnitDialog({ open, unit, onClose, onUpdated }: EditUnitDialo
       setErrors({});
     }
   }, [unit]);
+
+  useEffect(() => {
+    if (!open) return;
+    let isActive = true;
+    setIsLoadingParents(true);
+    lessonsService.getLessons({ limit: 200, sort_by: "order_no", sort_order: "ASC" })
+      .then((result) => {
+        if (!isActive) return;
+        setLessons(result.items.map((l) => ({ id: l.id, title: l.title })).sort((a, b) => a.title.localeCompare(b.title)));
+      })
+      .catch((error) => {
+        if (!isActive) return;
+        showToast({
+          title: "Unable to load lessons",
+          description: error instanceof Error ? error.message : "Please try again.",
+          variant: "error",
+        });
+      })
+      .finally(() => { if (isActive) setIsLoadingParents(false); });
+    return () => { isActive = false; };
+  }, [open, showToast]);
 
   if (!unit) return null;
 
@@ -143,9 +167,10 @@ export function EditUnitDialog({ open, unit, onClose, onUpdated }: EditUnitDialo
 
         <div className="mt-6 rounded-[28px] border border-(--border) bg-slate-50/80 p-5">
           <UnitForm
-            disabled={isSubmitting}
+            disabled={isSubmitting || isLoadingParents}
             errors={errors}
             formId={formId}
+            lessons={lessons}
             onChange={updateField}
             onSubmit={handleSubmit}
             values={values}
@@ -153,10 +178,10 @@ export function EditUnitDialog({ open, unit, onClose, onUpdated }: EditUnitDialo
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
-          <SecondaryButton disabled={isSubmitting} onClick={handleClose}>
+          <SecondaryButton disabled={isSubmitting || isLoadingParents} onClick={handleClose}>
             Cancel
           </SecondaryButton>
-          <PrimaryButton isLoading={isSubmitting} form={formId} type="submit">
+          <PrimaryButton disabled={isLoadingParents} isLoading={isSubmitting || isLoadingParents} form={formId} type="submit">
             Save Changes
           </PrimaryButton>
         </div>

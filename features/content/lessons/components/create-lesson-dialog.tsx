@@ -15,6 +15,7 @@ import {
 } from "@/features/content/lessons/components/lesson-form";
 import { contentOrderNosService } from "@/lib/services/content/order-nos.service";
 import { lessonsService } from "@/lib/services/content/lessons.service";
+import { sectionsService } from "@/lib/services/content/sections.service";
 
 interface CreateLessonDialogProps {
   onCreated?: () => void;
@@ -28,6 +29,7 @@ export function CreateLessonDialog({ onCreated }: CreateLessonDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingLastOrder, setIsLoadingLastOrder] = useState(false);
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
+  const [sections, setSections] = useState<{ id: string; title: string }[]>([]);
   const [values, setValues] = useState<LessonFormValues>(defaultLessonFormValues);
   const [errors, setErrors] = useState<LessonFormErrors>({});
 
@@ -66,18 +68,23 @@ export function CreateLessonDialog({ onCreated }: CreateLessonDialogProps) {
       setErrors({});
       setIsSlugManuallyEdited(false);
       setValues(defaultLessonFormValues);
+      setSections([]);
 
       try {
-        const response = await contentOrderNosService.getLastContentOrderNos();
+        const [orderNos, sectionsResult] = await Promise.all([
+          contentOrderNosService.getLastContentOrderNos(),
+          sectionsService.getSections({ limit: 200, sort_by: "order_no", sort_order: "ASC" }),
+        ]);
         if (!isActive) return;
         setValues((current) => ({
           ...current,
-          orderNo: String(response.lessons + 1 || 1),
+          orderNo: String(orderNos.lessons + 1 || 1),
         }));
+        setSections(sectionsResult.items.map((s) => ({ id: s.id, title: s.title })).sort((a, b) => a.title.localeCompare(b.title)));
       } catch (error) {
         if (!isActive) return;
         showToast({
-          title: "Unable to load default order",
+          title: "Unable to load form data",
           description: error instanceof Error ? error.message : "Please try again.",
           variant: "error",
         });
@@ -169,6 +176,7 @@ export function CreateLessonDialog({ onCreated }: CreateLessonDialogProps) {
                 formId={formId}
                 onChange={updateField}
                 onSubmit={handleSubmit}
+                sections={sections}
                 values={values}
               />
             </div>

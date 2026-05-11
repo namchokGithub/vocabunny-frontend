@@ -1,7 +1,7 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { FormField, FormSection, TextareaField } from "@/components/form/form-field";
+import { FormField, FormSection, SelectField, TextareaField } from "@/components/form/form-field";
 
 export interface LessonFormValues {
   title: string;
@@ -25,6 +25,7 @@ interface LessonFormProps {
   values: LessonFormValues;
   errors: LessonFormErrors;
   disabled?: boolean;
+  sections: { id: string; title: string }[];
   onChange: <K extends keyof LessonFormValues>(key: K, value: LessonFormValues[K]) => void;
   onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
 }
@@ -60,7 +61,7 @@ export function validateLessonForm(values: LessonFormValues): LessonFormErrors {
   } else if (!/^[a-z0-9-]+$/.test(values.slug.trim())) {
     errors.slug = "Use lowercase letters, numbers, and hyphens only.";
   }
-  if (!values.sectionId.trim()) errors.sectionId = "Section ID is required.";
+  if (!values.sectionId.trim()) errors.sectionId = "Section is required.";
   if (values.orderNo.trim()) {
     const n = Number(values.orderNo);
     if (!Number.isInteger(n) || n < 1) errors.orderNo = "Order must be a positive integer.";
@@ -68,7 +69,7 @@ export function validateLessonForm(values: LessonFormValues): LessonFormErrors {
   return errors;
 }
 
-export function LessonForm({ formId, values, errors, disabled = false, onChange, onSubmit }: LessonFormProps) {
+export function LessonForm({ formId, values, errors, disabled = false, sections, onChange, onSubmit }: LessonFormProps) {
   return (
     <form className="space-y-5" id={formId} onSubmit={onSubmit}>
       <FormSection>
@@ -91,16 +92,19 @@ export function LessonForm({ formId, values, errors, disabled = false, onChange,
           placeholder="colors-and-shapes"
           value={values.slug}
         />
-        <FormField
+        <SelectField
           required
           disabled={disabled}
           error={errors.sectionId}
-          hint="UUID of the parent section."
-          label="Section ID"
-          onChange={(e) => onChange("sectionId", e.target.value)}
-          placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+          label="Section"
           value={values.sectionId}
-        />
+          onChange={(e) => onChange("sectionId", e.target.value)}
+        >
+          <option value="">— Select a section —</option>
+          {sections.map((s) => (
+            <option key={s.id} value={s.id}>{s.title}</option>
+          ))}
+        </SelectField>
         <FormField
           required
           disabled={disabled}

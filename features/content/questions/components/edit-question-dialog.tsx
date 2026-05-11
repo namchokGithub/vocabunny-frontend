@@ -13,6 +13,7 @@ import {
 } from "@/features/content/questions/components/question-form";
 import type { Question, QuestionType } from "@/lib/api/content/questions";
 import { questionsService } from "@/lib/services/content/questions.service";
+import { questionSetsService } from "@/lib/services/content/question-sets.service";
 
 interface EditQuestionDialogProps {
   open: boolean;
@@ -42,6 +43,8 @@ export function EditQuestionDialog({ open, question, onClose, onUpdated }: EditQ
   const formId = useId();
   const { showToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingParents, setIsLoadingParents] = useState(false);
+  const [questionSets, setQuestionSets] = useState<{ id: string; title: string }[]>([]);
   const [values, setValues] = useState<QuestionFormValues>(
     question ? toQuestionFormValues(question) : defaultQuestionFormValues,
   );
@@ -53,6 +56,27 @@ export function EditQuestionDialog({ open, question, onClose, onUpdated }: EditQ
       setErrors({});
     }
   }, [question]);
+
+  useEffect(() => {
+    if (!open) return;
+    let isActive = true;
+    setIsLoadingParents(true);
+    questionSetsService.getQuestionSets({ limit: 200, sort_by: "order_no", sort_order: "ASC" })
+      .then((result) => {
+        if (!isActive) return;
+        setQuestionSets(result.items.map((qs) => ({ id: qs.id, title: qs.title })).sort((a, b) => a.title.localeCompare(b.title)));
+      })
+      .catch((error) => {
+        if (!isActive) return;
+        showToast({
+          title: "Unable to load question sets",
+          description: error instanceof Error ? error.message : "Please try again.",
+          variant: "error",
+        });
+      })
+      .finally(() => { if (isActive) setIsLoadingParents(false); });
+    return () => { isActive = false; };
+  }, [open, showToast]);
 
   if (!question) return null;
 
@@ -142,20 +166,21 @@ export function EditQuestionDialog({ open, question, onClose, onUpdated }: EditQ
 
         <div className="mt-6 max-h-[60vh] overflow-y-auto rounded-[28px] border border-(--border) bg-slate-50/80 p-5">
           <QuestionForm
-            disabled={isSubmitting}
+            disabled={isSubmitting || isLoadingParents}
             errors={errors}
             formId={formId}
             onChange={updateField}
             onSubmit={handleSubmit}
+            questionSets={questionSets}
             values={values}
           />
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
-          <SecondaryButton disabled={isSubmitting} onClick={handleClose}>
+          <SecondaryButton disabled={isSubmitting || isLoadingParents} onClick={handleClose}>
             Cancel
           </SecondaryButton>
-          <PrimaryButton isLoading={isSubmitting} form={formId} type="submit">
+          <PrimaryButton disabled={isLoadingParents} isLoading={isSubmitting || isLoadingParents} form={formId} type="submit">
             Save Changes
           </PrimaryButton>
         </div>

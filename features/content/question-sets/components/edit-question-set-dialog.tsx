@@ -15,6 +15,7 @@ import {
 } from "@/features/content/question-sets/components/question-set-form";
 import type { QuestionSet } from "@/lib/api/content/question-sets";
 import { questionSetsService } from "@/lib/services/content/question-sets.service";
+import { unitsService } from "@/lib/services/content/units.service";
 
 interface EditQuestionSetDialogProps {
   open: boolean;
@@ -40,6 +41,8 @@ export function EditQuestionSetDialog({ open, questionSet, onClose, onUpdated }:
   const formId = useId();
   const { showToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingParents, setIsLoadingParents] = useState(false);
+  const [units, setUnits] = useState<{ id: string; title: string }[]>([]);
   const [values, setValues] = useState<QuestionSetFormValues>(
     questionSet ? toQuestionSetFormValues(questionSet) : defaultQuestionSetFormValues,
   );
@@ -51,6 +54,27 @@ export function EditQuestionSetDialog({ open, questionSet, onClose, onUpdated }:
       setErrors({});
     }
   }, [questionSet]);
+
+  useEffect(() => {
+    if (!open) return;
+    let isActive = true;
+    setIsLoadingParents(true);
+    unitsService.getUnits({ limit: 200, sort_by: "order_no", sort_order: "ASC" })
+      .then((result) => {
+        if (!isActive) return;
+        setUnits(result.items.map((u) => ({ id: u.id, title: u.title })).sort((a, b) => a.title.localeCompare(b.title)));
+      })
+      .catch((error) => {
+        if (!isActive) return;
+        showToast({
+          title: "Unable to load units",
+          description: error instanceof Error ? error.message : "Please try again.",
+          variant: "error",
+        });
+      })
+      .finally(() => { if (isActive) setIsLoadingParents(false); });
+    return () => { isActive = false; };
+  }, [open, showToast]);
 
   if (!questionSet) return null;
 
@@ -147,20 +171,21 @@ export function EditQuestionSetDialog({ open, questionSet, onClose, onUpdated }:
 
         <div className="mt-6 rounded-[28px] border border-(--border) bg-slate-50/80 p-5">
           <QuestionSetForm
-            disabled={isSubmitting}
+            disabled={isSubmitting || isLoadingParents}
             errors={errors}
             formId={formId}
             onChange={updateField}
             onSubmit={handleSubmit}
+            units={units}
             values={values}
           />
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
-          <SecondaryButton disabled={isSubmitting} onClick={handleClose}>
+          <SecondaryButton disabled={isSubmitting || isLoadingParents} onClick={handleClose}>
             Cancel
           </SecondaryButton>
-          <PrimaryButton isLoading={isSubmitting} form={formId} type="submit">
+          <PrimaryButton disabled={isLoadingParents} isLoading={isSubmitting || isLoadingParents} form={formId} type="submit">
             Save Changes
           </PrimaryButton>
         </div>

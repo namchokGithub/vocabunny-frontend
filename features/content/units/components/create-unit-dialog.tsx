@@ -15,6 +15,7 @@ import {
 } from "@/features/content/units/components/unit-form";
 import { contentOrderNosService } from "@/lib/services/content/order-nos.service";
 import { unitsService } from "@/lib/services/content/units.service";
+import { lessonsService } from "@/lib/services/content/lessons.service";
 
 interface CreateUnitDialogProps {
   onCreated?: () => void;
@@ -28,6 +29,7 @@ export function CreateUnitDialog({ onCreated }: CreateUnitDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingLastOrder, setIsLoadingLastOrder] = useState(false);
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
+  const [lessons, setLessons] = useState<{ id: string; title: string }[]>([]);
   const [values, setValues] = useState<UnitFormValues>(defaultUnitFormValues);
   const [errors, setErrors] = useState<UnitFormErrors>({});
 
@@ -66,18 +68,23 @@ export function CreateUnitDialog({ onCreated }: CreateUnitDialogProps) {
       setErrors({});
       setIsSlugManuallyEdited(false);
       setValues(defaultUnitFormValues);
+      setLessons([]);
 
       try {
-        const response = await contentOrderNosService.getLastContentOrderNos();
+        const [orderNos, lessonsResult] = await Promise.all([
+          contentOrderNosService.getLastContentOrderNos(),
+          lessonsService.getLessons({ limit: 200, sort_by: "order_no", sort_order: "ASC" }),
+        ]);
         if (!isActive) return;
         setValues((current) => ({
           ...current,
-          orderNo: String(response.units + 1 || 1),
+          orderNo: String(orderNos.units + 1 || 1),
         }));
+        setLessons(lessonsResult.items.map((l) => ({ id: l.id, title: l.title })).sort((a, b) => a.title.localeCompare(b.title)));
       } catch (error) {
         if (!isActive) return;
         showToast({
-          title: "Unable to load default order",
+          title: "Unable to load form data",
           description: error instanceof Error ? error.message : "Please try again.",
           variant: "error",
         });
@@ -167,6 +174,7 @@ export function CreateUnitDialog({ onCreated }: CreateUnitDialogProps) {
                 disabled={isSubmitting || isLoadingLastOrder}
                 errors={errors}
                 formId={formId}
+                lessons={lessons}
                 onChange={updateField}
                 onSubmit={handleSubmit}
                 values={values}

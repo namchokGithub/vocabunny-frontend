@@ -13,6 +13,7 @@ import {
 } from "@/features/content/questions/components/question-form";
 import { contentOrderNosService } from "@/lib/services/content/order-nos.service";
 import { questionsService } from "@/lib/services/content/questions.service";
+import { questionSetsService } from "@/lib/services/content/question-sets.service";
 import type { QuestionType } from "@/lib/api/content/questions";
 
 interface CreateQuestionDialogProps {
@@ -26,6 +27,7 @@ export function CreateQuestionDialog({ onCreated }: CreateQuestionDialogProps) {
   const [, setRefreshKey] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingLastOrder, setIsLoadingLastOrder] = useState(false);
+  const [questionSets, setQuestionSets] = useState<{ id: string; title: string }[]>([]);
   const [values, setValues] = useState<QuestionFormValues>(defaultQuestionFormValues);
   const [errors, setErrors] = useState<QuestionFormErrors>({});
 
@@ -47,18 +49,23 @@ export function CreateQuestionDialog({ onCreated }: CreateQuestionDialogProps) {
       setIsLoadingLastOrder(true);
       setErrors({});
       setValues(defaultQuestionFormValues);
+      setQuestionSets([]);
 
       try {
-        const response = await contentOrderNosService.getLastContentOrderNos();
+        const [orderNos, questionSetsResult] = await Promise.all([
+          contentOrderNosService.getLastContentOrderNos(),
+          questionSetsService.getQuestionSets({ limit: 200, sort_by: "order_no", sort_order: "ASC" }),
+        ]);
         if (!isActive) return;
         setValues((current) => ({
           ...current,
-          orderNo: String(response.questions + 1 || 1),
+          orderNo: String(orderNos.questions + 1 || 1),
         }));
+        setQuestionSets(questionSetsResult.items.map((qs) => ({ id: qs.id, title: qs.title })).sort((a, b) => a.title.localeCompare(b.title)));
       } catch (error) {
         if (!isActive) return;
         showToast({
-          title: "Unable to load default order",
+          title: "Unable to load form data",
           description: error instanceof Error ? error.message : "Please try again.",
           variant: "error",
         });
@@ -159,6 +166,7 @@ export function CreateQuestionDialog({ onCreated }: CreateQuestionDialogProps) {
                 formId={formId}
                 onChange={updateField}
                 onSubmit={handleSubmit}
+                questionSets={questionSets}
                 values={values}
               />
             </div>

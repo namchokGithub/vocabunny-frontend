@@ -15,6 +15,7 @@ import {
 } from "@/features/content/lessons/components/lesson-form";
 import type { Lesson } from "@/lib/api/content/lessons";
 import { lessonsService } from "@/lib/services/content/lessons.service";
+import { sectionsService } from "@/lib/services/content/sections.service";
 
 interface EditLessonDialogProps {
   open: boolean;
@@ -38,6 +39,8 @@ export function EditLessonDialog({ open, lesson, onClose, onUpdated }: EditLesso
   const formId = useId();
   const { showToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingParents, setIsLoadingParents] = useState(false);
+  const [sections, setSections] = useState<{ id: string; title: string }[]>([]);
   const [values, setValues] = useState<LessonFormValues>(
     lesson ? toLessonFormValues(lesson) : defaultLessonFormValues,
   );
@@ -49,6 +52,27 @@ export function EditLessonDialog({ open, lesson, onClose, onUpdated }: EditLesso
       setErrors({});
     }
   }, [lesson]);
+
+  useEffect(() => {
+    if (!open) return;
+    let isActive = true;
+    setIsLoadingParents(true);
+    sectionsService.getSections({ limit: 200, sort_by: "order_no", sort_order: "ASC" })
+      .then((result) => {
+        if (!isActive) return;
+        setSections(result.items.map((s) => ({ id: s.id, title: s.title })).sort((a, b) => a.title.localeCompare(b.title)));
+      })
+      .catch((error) => {
+        if (!isActive) return;
+        showToast({
+          title: "Unable to load sections",
+          description: error instanceof Error ? error.message : "Please try again.",
+          variant: "error",
+        });
+      })
+      .finally(() => { if (isActive) setIsLoadingParents(false); });
+    return () => { isActive = false; };
+  }, [open, showToast]);
 
   if (!lesson) return null;
 
@@ -143,20 +167,21 @@ export function EditLessonDialog({ open, lesson, onClose, onUpdated }: EditLesso
 
         <div className="mt-6 rounded-[28px] border border-(--border) bg-slate-50/80 p-5">
           <LessonForm
-            disabled={isSubmitting}
+            disabled={isSubmitting || isLoadingParents}
             errors={errors}
             formId={formId}
             onChange={updateField}
             onSubmit={handleSubmit}
+            sections={sections}
             values={values}
           />
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
-          <SecondaryButton disabled={isSubmitting} onClick={handleClose}>
+          <SecondaryButton disabled={isSubmitting || isLoadingParents} onClick={handleClose}>
             Cancel
           </SecondaryButton>
-          <PrimaryButton isLoading={isSubmitting} form={formId} type="submit">
+          <PrimaryButton disabled={isLoadingParents} isLoading={isSubmitting || isLoadingParents} form={formId} type="submit">
             Save Changes
           </PrimaryButton>
         </div>

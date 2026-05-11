@@ -1,7 +1,7 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { FormField, FormSection, TextareaField } from "@/components/form/form-field";
+import { FormField, FormSection, SelectField, TextareaField } from "@/components/form/form-field";
 
 export interface QuestionSetFormValues {
   title: string;
@@ -29,6 +29,7 @@ interface QuestionSetFormProps {
   values: QuestionSetFormValues;
   errors: QuestionSetFormErrors;
   disabled?: boolean;
+  units: { id: string; title: string }[];
   onChange: <K extends keyof QuestionSetFormValues>(key: K, value: QuestionSetFormValues[K]) => void;
   onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
 }
@@ -66,7 +67,7 @@ export function validateQuestionSetForm(values: QuestionSetFormValues): Question
   } else if (!/^[a-z0-9-]+$/.test(values.slug.trim())) {
     errors.slug = "Use lowercase letters, numbers, and hyphens only.";
   }
-  if (!values.unitId.trim()) errors.unitId = "Unit ID is required.";
+  if (!values.unitId.trim()) errors.unitId = "Unit is required.";
   if (values.orderNo.trim()) {
     const n = Number(values.orderNo);
     if (!Number.isInteger(n) || n < 1) errors.orderNo = "Order must be a positive integer.";
@@ -84,7 +85,7 @@ export function validateQuestionSetForm(values: QuestionSetFormValues): Question
   return errors;
 }
 
-export function QuestionSetForm({ formId, values, errors, disabled = false, onChange, onSubmit }: QuestionSetFormProps) {
+export function QuestionSetForm({ formId, values, errors, disabled = false, units, onChange, onSubmit }: QuestionSetFormProps) {
   return (
     <form className="space-y-5" id={formId} onSubmit={onSubmit}>
       <FormSection>
@@ -107,16 +108,19 @@ export function QuestionSetForm({ formId, values, errors, disabled = false, onCh
           placeholder="colors-quiz-set"
           value={values.slug}
         />
-        <FormField
+        <SelectField
           required
           disabled={disabled}
           error={errors.unitId}
-          hint="UUID of the parent unit."
-          label="Unit ID"
-          onChange={(e) => onChange("unitId", e.target.value)}
-          placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+          label="Unit"
           value={values.unitId}
-        />
+          onChange={(e) => onChange("unitId", e.target.value)}
+        >
+          <option value="">— Select a unit —</option>
+          {units.map((u) => (
+            <option key={u.id} value={u.id}>{u.title}</option>
+          ))}
+        </SelectField>
         <FormField
           required
           disabled={disabled}

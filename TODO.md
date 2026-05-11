@@ -1,21 +1,5 @@
 TODO
 
-- Section
-  - ~~Search~~, ~~Ordering~~
-  - ~~Last Order Number when Create~~
-  - ~~(API) re-order~~
-    - ~~Warning when select new order~~
-
-- ~~Enhance~~
-  - ~~Loading State ของปุ่ม~~
-  - ~~Empty State ให้ดีขึ้น~~
-  - ~~Toast System~~
-  - ~~Debounce Search~~
-  - ~~Query Reset on Search~~
-  - ~~URL Query Sync~~
-  - ~~Table Column Width / Align~~
-  - ~~Row Key~~
-
 - Enhance
   - Empty State ที่ polished
   - Sticky Table Header
@@ -28,3 +12,8 @@ TODO
   * Relative Date Tooltip (Hover: 2 hours ago)
 
 * Bulk Actions
+* API ฝั่งดึงข้อมูล Preload ข้อมูล parent
+* Tags
+  - Color picker in Tags
+  - Auto slug
+  - (API) Create/Update field color

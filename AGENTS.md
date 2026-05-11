@@ -2,49 +2,107 @@
 
 ## General
 
-- feature-based structure
-- lightweight architecture
-- scalable and maintainable
-- avoid overengineering
+- use feature-based structure
 - preserve existing folder structure
+- keep architecture lightweight and maintainable
+- prefer incremental improvements
+- avoid overengineering and unnecessary abstractions
 
 ## State Management
 
 - no Redux
-- no global state unless necessary
+- avoid global state unless necessary
 - prefer local state and lightweight patterns
 
 ## API Architecture
 
-- service layer wraps api layer
-- api layer handles raw HTTP/fetch only
-- service layer unwraps ApiResponse
-- UI must not use ApiResponse directly
 - apiClient is the single HTTP entry point
+- api layer handles raw fetch/http only
+- service layer wraps api layer
+- service layer unwraps ApiResponse
+- UI/components must not use ApiResponse directly
 
 ## Components
 
-- shared reusable components belong in:
-  src/components/
+### Shared Components
 
-- feature/domain-specific components belong in:
-  src/features/
+Shared reusable components belong in:
 
-- avoid putting feature-specific UI into shared components
+src/components/
+
+Examples:
+
+- buttons
+- dialogs
+- tables
+- form inputs
+- toast
+- loading states
+
+### Feature Components
+
+Feature/domain-specific components belong in:
+
+src/features/
+
+Avoid:
+
+- feature-specific business UI inside shared components
 
 ## Tables & CRUD
 
-- use generic reusable DataTable system
+- preserve generic DataTable<T>
 - preserve generic ContentListPage<T>
 - keep pages thin
-- separate business logic from UI
+- separate query/business logic from presentation UI
+- reuse Sections patterns for future CRUD modules
+
+### Query State
+
+Query state belongs to:
+
+- page.tsx
+- container/feature components
+
+Avoid placing inside generic components:
+
+- search state
+- filter state
+- pagination state
+- sorting state
+
+### Table UX
+
+- preserve stable layout during loading
+- avoid full table flicker during refetch
+- preserve existing data during soft loading
+- use truncate + tooltip for overflowing content
+- avoid layout shifts during:
+  - sorting
+  - pagination
+  - searching
+  - filtering
 
 ## Forms
 
-- prefer concrete forms before abstraction
-- avoid dynamic form builders unless truly needed
+- prefer concrete forms before abstractions
+- avoid dynamic form builders unless necessary
 - reusable form inputs are allowed
-- feature forms should stay inside feature folders
+- feature forms remain inside feature folders
+
+## Async UX
+
+- mutations should provide loading feedback
+- destructive actions require confirmation dialogs
+- success/error flows should use toast notifications
+- preserve soft-loading UX when possible
+
+## Data Fetching
+
+- avoid duplicate fetch logic
+- prefer reusable async/loading hooks
+- avoid direct fetch calls inside UI components
+- avoid unnecessary remounts during refetch
 
 ## Styling
 
@@ -52,7 +110,7 @@
 - preserve current design language
 - clean admin-panel style UI
 - minimal but polished
-- avoid unnecessary animations
+- avoid flashy animations
 
 ## Auth
 
@@ -61,29 +119,15 @@
 - apiClient attaches Authorization header automatically
 - protected routes must redirect unauthenticated users
 
+## Accessibility
+
+- preserve keyboard accessibility
+- interactive elements should remain accessible
+- avoid hover-only critical UX
+
 ## Code Style
 
 - production-oriented
 - readable
 - modular
-- incremental improvements only
 - avoid giant components/files
-- avoid unnecessary abstractions
-
-## Query State
-
-- query state belongs to page/container components
-- shared components must remain presentation-focused
-- search/filter/pagination state should not live inside DataTable
-
-## Async UX
-
-- mutations should provide loading feedback
-- destructive actions should use confirmation dialogs
-- success/error flows should use toast notifications
-
-## Data Fetching
-
-- avoid duplicate fetch logic
-- prefer reusable hooks for async loading patterns
-- avoid direct fetch calls inside UI components

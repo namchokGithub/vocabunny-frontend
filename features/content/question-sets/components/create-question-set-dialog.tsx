@@ -15,6 +15,7 @@ import {
 } from "@/features/content/question-sets/components/question-set-form";
 import { contentOrderNosService } from "@/lib/services/content/order-nos.service";
 import { questionSetsService } from "@/lib/services/content/question-sets.service";
+import { unitsService } from "@/lib/services/content/units.service";
 
 interface CreateQuestionSetDialogProps {
   onCreated?: () => void;
@@ -28,6 +29,7 @@ export function CreateQuestionSetDialog({ onCreated }: CreateQuestionSetDialogPr
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingLastOrder, setIsLoadingLastOrder] = useState(false);
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
+  const [units, setUnits] = useState<{ id: string; title: string }[]>([]);
   const [values, setValues] = useState<QuestionSetFormValues>(defaultQuestionSetFormValues);
   const [errors, setErrors] = useState<QuestionSetFormErrors>({});
 
@@ -66,18 +68,23 @@ export function CreateQuestionSetDialog({ onCreated }: CreateQuestionSetDialogPr
       setErrors({});
       setIsSlugManuallyEdited(false);
       setValues(defaultQuestionSetFormValues);
+      setUnits([]);
 
       try {
-        const response = await contentOrderNosService.getLastContentOrderNos();
+        const [orderNos, unitsResult] = await Promise.all([
+          contentOrderNosService.getLastContentOrderNos(),
+          unitsService.getUnits({ limit: 200, sort_by: "order_no", sort_order: "ASC" }),
+        ]);
         if (!isActive) return;
         setValues((current) => ({
           ...current,
-          orderNo: String(response.question_sets + 1 || 1),
+          orderNo: String(orderNos.question_sets + 1 || 1),
         }));
+        setUnits(unitsResult.items.map((u) => ({ id: u.id, title: u.title })).sort((a, b) => a.title.localeCompare(b.title)));
       } catch (error) {
         if (!isActive) return;
         showToast({
-          title: "Unable to load default order",
+          title: "Unable to load form data",
           description: error instanceof Error ? error.message : "Please try again.",
           variant: "error",
         });
@@ -171,6 +178,7 @@ export function CreateQuestionSetDialog({ onCreated }: CreateQuestionSetDialogPr
                 formId={formId}
                 onChange={updateField}
                 onSubmit={handleSubmit}
+                units={units}
                 values={values}
               />
             </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { FormField, FormSection, TextareaField } from "@/components/form/form-field";
+import { FormField, FormSection, SelectField, TextareaField } from "@/components/form/form-field";
 
 export interface UnitFormValues {
   title: string;
@@ -25,6 +25,7 @@ interface UnitFormProps {
   values: UnitFormValues;
   errors: UnitFormErrors;
   disabled?: boolean;
+  lessons: { id: string; title: string }[];
   onChange: <K extends keyof UnitFormValues>(key: K, value: UnitFormValues[K]) => void;
   onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
 }
@@ -60,7 +61,7 @@ export function validateUnitForm(values: UnitFormValues): UnitFormErrors {
   } else if (!/^[a-z0-9-]+$/.test(values.slug.trim())) {
     errors.slug = "Use lowercase letters, numbers, and hyphens only.";
   }
-  if (!values.lessonId.trim()) errors.lessonId = "Lesson ID is required.";
+  if (!values.lessonId.trim()) errors.lessonId = "Lesson is required.";
   if (values.orderNo.trim()) {
     const n = Number(values.orderNo);
     if (!Number.isInteger(n) || n < 1) errors.orderNo = "Order must be a positive integer.";
@@ -68,7 +69,7 @@ export function validateUnitForm(values: UnitFormValues): UnitFormErrors {
   return errors;
 }
 
-export function UnitForm({ formId, values, errors, disabled = false, onChange, onSubmit }: UnitFormProps) {
+export function UnitForm({ formId, values, errors, disabled = false, lessons, onChange, onSubmit }: UnitFormProps) {
   return (
     <form className="space-y-5" id={formId} onSubmit={onSubmit}>
       <FormSection>
@@ -91,16 +92,19 @@ export function UnitForm({ formId, values, errors, disabled = false, onChange, o
           placeholder="red-things"
           value={values.slug}
         />
-        <FormField
+        <SelectField
           required
           disabled={disabled}
           error={errors.lessonId}
-          hint="UUID of the parent lesson."
-          label="Lesson ID"
-          onChange={(e) => onChange("lessonId", e.target.value)}
-          placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+          label="Lesson"
           value={values.lessonId}
-        />
+          onChange={(e) => onChange("lessonId", e.target.value)}
+        >
+          <option value="">— Select a lesson —</option>
+          {lessons.map((l) => (
+            <option key={l.id} value={l.id}>{l.title}</option>
+          ))}
+        </SelectField>
         <FormField
           required
           disabled={disabled}

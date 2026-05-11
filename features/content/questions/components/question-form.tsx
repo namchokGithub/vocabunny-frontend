@@ -36,6 +36,7 @@ interface QuestionFormProps {
   values: QuestionFormValues;
   errors: QuestionFormErrors;
   disabled?: boolean;
+  questionSets: { id: string; title: string }[];
   onChange: <K extends keyof QuestionFormValues>(key: K, value: QuestionFormValues[K]) => void;
   onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
 }
@@ -54,7 +55,7 @@ export const defaultQuestionFormValues: QuestionFormValues = {
 
 export function validateQuestionForm(values: QuestionFormValues): QuestionFormErrors {
   const errors: QuestionFormErrors = {};
-  if (!values.questionSetId.trim()) errors.questionSetId = "Question Set ID is required.";
+  if (!values.questionSetId.trim()) errors.questionSetId = "Question Set is required.";
   if (!values.type.trim()) errors.type = "Type is required.";
   if (!values.questionText.trim()) errors.questionText = "Question text is required.";
   if (values.difficulty.trim()) {
@@ -68,20 +69,23 @@ export function validateQuestionForm(values: QuestionFormValues): QuestionFormEr
   return errors;
 }
 
-export function QuestionForm({ formId, values, errors, disabled = false, onChange, onSubmit }: QuestionFormProps) {
+export function QuestionForm({ formId, values, errors, disabled = false, questionSets, onChange, onSubmit }: QuestionFormProps) {
   return (
     <form className="space-y-5" id={formId} onSubmit={onSubmit}>
       <FormSection>
-        <FormField
+        <SelectField
           required
           disabled={disabled}
           error={errors.questionSetId}
-          hint="UUID of the parent question set."
-          label="Question Set ID"
-          onChange={(e) => onChange("questionSetId", e.target.value)}
-          placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+          label="Question Set"
           value={values.questionSetId}
-        />
+          onChange={(e) => onChange("questionSetId", e.target.value)}
+        >
+          <option value="">— Select a question set —</option>
+          {questionSets.map((qs) => (
+            <option key={qs.id} value={qs.id}>{qs.title}</option>
+          ))}
+        </SelectField>
         <SelectField
           required
           disabled={disabled}
