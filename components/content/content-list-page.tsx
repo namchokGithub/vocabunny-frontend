@@ -45,6 +45,7 @@ interface ContentListPageProps<T> {
   sortKey?: string;
   sortDirection?: SortDirection;
   onSortChange?: (sortKey?: string, direction?: SortDirection) => void;
+  refreshSignal?: number;
 }
 
 export function ContentListPage<T>({
@@ -70,6 +71,7 @@ export function ContentListPage<T>({
   sortKey,
   sortDirection,
   onSortChange,
+  refreshSignal,
 }: ContentListPageProps<T>) {
   const isControlled = controlledPage !== undefined;
   const [internalPage, setInternalPage] = useState(1);
@@ -136,15 +138,16 @@ export function ContentListPage<T>({
   }
 
   const paginatedLoader = useCallback(
-    () =>
-      loader({
-        page: activePage,
-        limit: defaultPageSize,
-      }),
-    [defaultPageSize, loader, activePage],
+    () => {
+      void refreshSignal; // included to trigger a re-fetch when parent signals a data change
+      return loader({ page: activePage, limit: defaultPageSize });
+    },
+    [defaultPageSize, loader, activePage, refreshSignal],
   );
 
   const { data, isLoading, error } = useAsyncData(paginatedLoader);
+  const isInitialLoad = isLoading && data === null;
+  const isRefetching = isLoading && data !== null;
   const createButton = <PrimaryButton>{createLabel}</PrimaryButton>;
   const paging = data?.paging;
   const hasPreviousPage = (paging?.page ?? activePage) > 1;
@@ -243,7 +246,30 @@ export function ContentListPage<T>({
           </div>
 
           <div className="flex items-center gap-3 text-sm text-slate-500">
-            <span>
+            <span className="flex items-center gap-2">
+              {isRefetching ? (
+                <svg
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 animate-spin text-slate-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    fill="currentColor"
+                  />
+                </svg>
+              ) : null}
               {paging
                 ? `Page ${paging.page} of ${paging.total_pages} • ${paging.total} records`
                 : "Loading pagination..."}
@@ -268,22 +294,29 @@ export function ContentListPage<T>({
         </div>
       </div>
 
-      {isLoading ? (
+      {isInitialLoad ? (
         <LoadingTable />
       ) : error ? (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
           {error}
         </div>
       ) : (
-        <DataTable
-          columns={columns}
-          rows={data?.items ?? []}
-          showRowNumber={showRowNumber}
-          getRowKey={getRowKey}
-          sortKey={sortKey}
-          sortDirection={sortDirection}
-          onSortChange={onSortChange}
-        />
+        <div
+          className={cn(
+            "transition-opacity duration-150",
+            isRefetching && "pointer-events-none opacity-50",
+          )}
+        >
+          <DataTable
+            columns={columns}
+            rows={data?.items ?? []}
+            showRowNumber={showRowNumber}
+            getRowKey={getRowKey}
+            sortKey={sortKey}
+            sortDirection={sortDirection}
+            onSortChange={onSortChange}
+          />
+        </div>
       )}
     </div>
   );

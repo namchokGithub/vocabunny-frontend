@@ -137,7 +137,7 @@ function SectionsPageContent() {
   return (
     <>
       <ContentListPage
-        key={refreshKey}
+        refreshSignal={refreshKey}
         columns={columns}
         showRowNumber={true}
         searchValue={search}
