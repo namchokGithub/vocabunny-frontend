@@ -1,8 +1,8 @@
 TODO
 
 - Section
-  - ~~Search, Ordering~~
-  - Last Order Number when Create
+  - ~~Search~~, Ordering
+  - ~~Last Order Number when Create~~
   - ~~(API) re-order~~
     - ~~Warning when select new order~~
 - ~~Enhance~~

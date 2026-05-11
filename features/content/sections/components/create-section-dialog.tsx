@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import { PrimaryButton, SecondaryButton } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
@@ -13,6 +13,7 @@ import {
   type SectionFormErrors,
   type SectionFormValues,
 } from "@/features/content/sections/components/section-form";
+import { contentOrderNosService } from "@/lib/services/content/order-nos.service";
 import { sectionsService } from "@/lib/services/content/sections.service";
 
 interface CreateSectionDialogProps {
@@ -25,6 +26,7 @@ export function CreateSectionDialog({ onCreated }: CreateSectionDialogProps) {
   const [open, setOpen] = useState(false);
   const [, setRefreshKey] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingLastOrder, setIsLoadingLastOrder] = useState(false);
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
   const [values, setValues] = useState<SectionFormValues>(
     defaultSectionFormValues,
@@ -63,8 +65,57 @@ export function CreateSectionDialog({ onCreated }: CreateSectionDialogProps) {
     setIsSlugManuallyEdited(false);
   }
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    let isActive = true;
+
+    async function loadLastOrder() {
+      setIsLoadingLastOrder(true);
+      setErrors({});
+      setIsSlugManuallyEdited(false);
+      setValues(defaultSectionFormValues);
+
+      try {
+        const { sections } = await contentOrderNosService.getLastContentOrderNos();
+
+        if (!isActive) {
+          return;
+        }
+
+        setValues((current) => ({
+          ...current,
+          orderNo: String(sections || 1),
+        }));
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+
+        showToast({
+          title: "Unable to load default order",
+          description:
+            error instanceof Error ? error.message : "Please try again.",
+          variant: "error",
+        });
+      } finally {
+        if (isActive) {
+          setIsLoadingLastOrder(false);
+        }
+      }
+    }
+
+    void loadLastOrder();
+
+    return () => {
+      isActive = false;
+    };
+  }, [open, showToast]);
+
   function handleClose() {
-    if (isSubmitting) {
+    if (isSubmitting || isLoadingLastOrder) {
       return;
     }
 
@@ -144,7 +195,7 @@ export function CreateSectionDialog({ onCreated }: CreateSectionDialogProps) {
 
             <div className="mt-6 rounded-[28px] border border-(--border) bg-slate-50/80 p-5">
               <SectionForm
-                disabled={isSubmitting}
+                disabled={isSubmitting || isLoadingLastOrder}
                 errors={errors}
                 formId={formId}
                 onChange={updateField}
@@ -154,11 +205,15 @@ export function CreateSectionDialog({ onCreated }: CreateSectionDialogProps) {
             </div>
 
             <div className="mt-6 flex justify-end gap-3">
-              <SecondaryButton disabled={isSubmitting} onClick={handleClose}>
+              <SecondaryButton
+                disabled={isSubmitting || isLoadingLastOrder}
+                onClick={handleClose}
+              >
                 Cancel
               </SecondaryButton>
               <PrimaryButton
-                isLoading={isSubmitting}
+                disabled={isLoadingLastOrder}
+                isLoading={isSubmitting || isLoadingLastOrder}
                 form={formId}
                 type="submit"
               >
