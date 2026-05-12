@@ -22,18 +22,9 @@ export function createTagColumns({ onEdit, onDelete }: CreateTagColumnsOptions =
       ),
     },
     {
-      key: "slug",
-      header: "Slug",
-      sortable: true,
-      sortKey: "slug",
-      render: (tag) => (
-        <span className="text-sm text-slate-600">{tag.slug ?? "-"}</span>
-      ),
-    },
-    {
       key: "color",
       header: "Color",
-      width: "160px",
+      width: "180px",
       render: (tag) =>
         tag.color ? (
           <div className="flex items-center gap-2">
@@ -41,20 +32,17 @@ export function createTagColumns({ onEdit, onDelete }: CreateTagColumnsOptions =
               className="h-4 w-4 rounded-full border border-slate-200"
               style={{ backgroundColor: tag.color }}
             />
-            <span className="text-xs text-slate-500">{tag.color}</span>
+            <span className="font-mono text-xs text-slate-500">{tag.color}</span>
           </div>
         ) : (
-          <span className="text-slate-400">-</span>
+          <span className="text-slate-400">—</span>
         ),
     },
     {
-      key: "usage_count",
-      header: "Usage",
-      width: "90px",
-      align: "center",
-      render: (tag) => (
-        <span className="text-slate-600">{tag.usage_count ?? 0}</span>
-      ),
+      key: "created_at",
+      header: "Created At",
+      width: "180px",
+      render: (tag) => formatDateTime(tag.created_at),
     },
     {
       key: "updated_at",

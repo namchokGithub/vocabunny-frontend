@@ -1,6 +1,6 @@
 # VocabBunny Frontend — Progress Log
 
-> Last updated: 2026-05-11 (session 2)
+> Last updated: 2026-05-12 (session 4)
 
 ---
 
@@ -38,6 +38,23 @@
 - No `order_no` (order-nos API has no `tags` field).
 - No `is_published` or `is_active` filter.
 - `syncURL` omits the `published` param entirely.
+- No `slug` field — Tags API only exposes `name` and `color`. The old `slug`/`usage_count`/`deleted_at` fields were never part of the canonical API contract and have been removed.
+
+### Tags color input
+- **Plain text HEX input, no color picker library** — validated with `/^#[0-9A-Fa-f]{6}$/`. Color is optional; an empty string is accepted and omitted from the API payload.
+- **Live swatch preview** — a small rounded square next to the HEX input renders `style={{ backgroundColor }}` only when the current value passes the HEX regex. Transparent background when invalid or empty.
+- `normalizeTagSlug` / `normalizeTagName` helpers removed entirely; `updateField` in both dialogs is now a simple key-value setter with no slug branch.
+
+### Parent dropdown sorting
+- **All parent entity dropdowns sort alphabetically by title** — sorting is applied at the option-mapping layer inside each dialog, after `.map()` and before `setState`. Uses `localeCompare` for locale-aware ascending order. The form components and `SelectField` JSX are untouched; API payloads are unchanged.
+- Applied to: `create-lesson-dialog`, `edit-lesson-dialog`, `create-unit-dialog`, `edit-unit-dialog`, `create-question-set-dialog`, `edit-question-set-dialog`, `create-question-dialog`, `edit-question-dialog`.
+
+### Parent relation display in tables
+- **Content list tables show parent relation titles instead of raw UUIDs** — resolved via the backend `?include=` query parameter (comma-separated, case-insensitive). The API returns flat summary DTOs (`section`, `lesson`, `unit`, `question_set`) alongside the existing `*_id` fields.
+- **Optional fields on entity types** — `Lesson.section?`, `Unit.lesson?`, `QuestionSet.unit?` / `.lesson?`, `Question.question_set?`. Presence is not guaranteed; column renderers fall back to `"-"` when absent.
+- **`include` param added to `GetXxxParams`** — replaces the old `include_choices` / `include_tags` boolean fields on `GetQuestionsParams` (those never matched the actual API contract, which always used a single `include` string).
+- **Page loaders always request the parent relation** — each content list page passes a fixed `include` value so the relation is always preloaded on every list fetch. No extra state or conditional logic in pages or columns.
+- Summary types added to API layer: `SectionSummary`, `LessonSummary` (units + question-sets), `UnitSummary`, `QuestionSetSummary`.
 
 ---
 
@@ -57,9 +74,10 @@
 | `lib/hooks/use-debounce.ts` | **New** — generic debounce hook |
 | `lib/constants/navigation.ts` | Added Tags (`/content/tags`) to Content sidebar children |
 
-### API & Service layers (all pre-existing, no changes needed)
-`lib/api/content/{sections,lessons,units,question-sets,questions,tags,order-nos}.ts`
-`lib/services/content/{sections,lessons,units,question-sets,questions,tags,order-nos}.service.ts`
+### API & Service layers
+`lib/services/content/{sections,lessons,units,question-sets,questions,tags,order-nos}.service.ts` — no changes needed (service passes through params transparently).
+
+*Session 3:* API type files updated — see table below.
 
 ### Sections module (reference implementation — complete)
 | File | Change |
@@ -78,11 +96,15 @@
 
 *Session 2:* `lesson-form` — Section ID text input → `SelectField` with `sections` prop. `create-lesson-dialog` — fetches sections via `Promise.all`. `edit-lesson-dialog` — fetches sections on open via `useEffect`.
 
+*Session 3:* `create-lesson-dialog` / `edit-lesson-dialog` — sections list sorted alphabetically by title. `lesson-columns` — "Section ID" UUID column → "Section" title column (`lesson.section?.title ?? "-"`). `lessons/page.tsx` — loader passes `include: "section"`. `lib/api/content/lessons.ts` — added `SectionSummary` type, `section?` field on `Lesson`, `include?` on `GetLessonsParams`.
+
 ### Units module (complete)
 `features/content/units/components/{unit-form, unit-row-actions, create-unit-dialog, edit-unit-dialog, unit-columns}.tsx`
 `app/(dashboard)/content/units/page.tsx`
 
 *Session 2:* `unit-form` — Lesson ID text input → `SelectField` with `lessons` prop. `create-unit-dialog` / `edit-unit-dialog` — fetch lessons on open.
+
+*Session 3:* `create-unit-dialog` / `edit-unit-dialog` — lessons list sorted alphabetically by title. `unit-columns` — "Lesson ID" UUID column → "Lesson" title column (`unit.lesson?.title ?? "-"`). `units/page.tsx` — loader passes `include: "lesson"`. `lib/api/content/units.ts` — added `LessonSummary` type, `lesson?` field on `Unit`, `include?` on `GetUnitsParams`.
 
 ### Question Sets module (complete)
 `features/content/question-sets/components/{question-set-form, question-set-row-actions, create-question-set-dialog, edit-question-set-dialog, question-set-columns}.tsx`
@@ -90,15 +112,30 @@
 
 *Session 2:* `question-set-form` — Unit ID text input → `SelectField` with `units` prop. `create-question-set-dialog` / `edit-question-set-dialog` — fetch units on open.
 
+*Session 3:* `create-question-set-dialog` / `edit-question-set-dialog` — units list sorted alphabetically by title. `question-set-columns` — "Unit ID" UUID column → "Unit" title column (`qs.unit?.title ?? "-"`). `question-sets/page.tsx` — loader passes `include: "unit"`. `lib/api/content/question-sets.ts` — added `UnitSummary` + `LessonSummary` types, `unit?` / `lesson?` fields on `QuestionSet`, `include?` on `GetQuestionSetsParams`.
+
 ### Questions module (complete)
 `features/content/questions/components/{question-form, question-row-actions, create-question-dialog, edit-question-dialog, question-columns}.tsx`
 `app/(dashboard)/content/questions/page.tsx`
 
 *Session 2:* `question-form` — Question Set ID text input → `SelectField` with `questionSets` prop. `create-question-dialog` / `edit-question-dialog` — fetch question sets on open.
 
+*Session 3:* `create-question-dialog` / `edit-question-dialog` — question sets list sorted alphabetically by title. `question-columns` — "Question Set ID" UUID column → "Question Set" title column (`question.question_set?.title ?? "-"`). `questions/page.tsx` — loader passes `include: "question_set"`. `lib/api/content/questions.ts` — added `QuestionSetSummary` type, `question_set?` field on `Question`, `include?` on `GetQuestionsParams`; removed stale `include_choices` / `include_tags` booleans.
+
 ### Tags module (complete)
 `features/content/tags/components/{tag-form, tag-row-actions, create-tag-dialog, edit-tag-dialog, tag-columns}.tsx`
 `app/(dashboard)/content/tags/page.tsx` *(new route)*
+
+*Session 4:* Tags API updated to `{ name, color }` only — all `slug`, `usage_count`, `deleted_at` references removed across the entire module.
+
+| File | Change |
+|---|---|
+| `lib/api/content/tags.ts` | Removed `slug?`, `usage_count?`, `deleted_at?` from `Tag`; removed `slug?` from `CreateTagPayload` / `UpdateTagPayload` |
+| `features/content/tags/components/tag-form.tsx` | Removed `slug` field, `normalizeTagSlug`, `normalizeTagName`; form now has `name` + `color` only; HEX regex validation; live color swatch |
+| `features/content/tags/components/create-tag-dialog.tsx` | Removed slug import and slug branch in `updateField`; `createTag` payload is `{ name, color? }` |
+| `features/content/tags/components/edit-tag-dialog.tsx` | Removed slug from `toTagFormValues` and `updateTag` payload; simplified `updateField`; fixed dialog description text |
+| `features/content/tags/components/tag-columns.tsx` | Removed `slug` + `usage_count` columns; added `created_at` column; color column shows rounded swatch + monospace HEX |
+| `components/content/tags/tag-columns.tsx` | Aligned with new `Tag` type — removed `slug` + `usage_count` columns; updated color column |
 
 ---
 
@@ -106,11 +143,13 @@
 
 ### High priority
 - ~~**Parent ID dropdowns**~~ — **Done (session 2).** All parent ID text inputs replaced with `SelectField` dropdowns across Lessons, Units, Question Sets, and Questions forms and dialogs.
+- ~~**Parent relation column display**~~ — **Done (session 3).** All raw UUID parent columns replaced with relation title display via `?include=` API param across Lessons, Units, Question Sets, and Questions tables.
+- ~~**Parent dropdown alphabetical sorting**~~ — **Done (session 3).** All parent entity dropdowns in create/edit dialogs now sort options alphabetically by title using `localeCompare`.
+- ~~**Tags module API update**~~ — **Done (session 4).** Tags type updated to `{ name, color }`. Slug/usage_count removed everywhere. Color HEX input with live swatch added to form. Table updated with color badge + created_at column.
 - **Question tag picker** — `tag_ids` is omitted from the Question create/edit form. Needs a multi-select or tag picker component backed by `tagsService.getTags`.
 - **Real API integration testing** — All service calls are wired to the Go API but untested end-to-end. Verify auth token is attached, error shapes match `ApiResponse`, and paginated responses parse correctly.
 
 ### Medium priority
-- **Section ID column display** — The Lessons table currently shows raw UUIDs in a "Section ID" column. Ideally this resolves to the section title (requires a join or a secondary fetch). Same applies to Lesson ID in Units, Unit ID in Question Sets, etc.
 - **`blank_position` field in Question form** — Currently omitted. Needed for `FILL_IN_THE_BLANK` type questions. Could be conditionally rendered when `type === "FILL_IN_THE_BLANK"`.
 - **`image_url` preview** — Question form has an `imageUrl` text field. Adding a small image preview on valid URLs would improve editorial UX.
 - **Bulk actions** — Delete multiple records at once. Requires checkbox column in `DataTable`.

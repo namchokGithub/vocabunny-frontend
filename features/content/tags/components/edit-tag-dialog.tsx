@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useState } from "react";
 
 import { PrimaryButton, SecondaryButton } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import {
   TagForm,
   defaultTagFormValues,
-  normalizeTagSlug,
   validateTagForm,
   type TagFormErrors,
   type TagFormValues,
@@ -25,7 +24,6 @@ interface EditTagDialogProps {
 function toTagFormValues(tag: Tag): TagFormValues {
   return {
     name: tag.name,
-    slug: tag.slug ?? "",
     color: tag.color ?? "",
   };
 }
@@ -51,10 +49,6 @@ export function EditTagDialog({ open, tag, onClose, onUpdated }: EditTagDialogPr
   const activeTag = tag;
 
   function updateField<K extends keyof TagFormValues>(key: K, value: TagFormValues[K]) {
-    if (key === "slug") {
-      setValues((current) => ({ ...current, slug: normalizeTagSlug(String(value)) }));
-      return;
-    }
     setValues((current) => ({ ...current, [key]: value }));
   }
 
@@ -69,7 +63,7 @@ export function EditTagDialog({ open, tag, onClose, onUpdated }: EditTagDialogPr
     onClose();
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const nextErrors = validateTagForm(values);
@@ -82,7 +76,6 @@ export function EditTagDialog({ open, tag, onClose, onUpdated }: EditTagDialogPr
     try {
       await tagsService.updateTag(activeTag.id, {
         name: values.name.trim(),
-        slug: values.slug.trim() || undefined,
         color: values.color.trim() || undefined,
       });
 
@@ -116,7 +109,7 @@ export function EditTagDialog({ open, tag, onClose, onUpdated }: EditTagDialogPr
             </p>
             <h2 className="mt-2 text-2xl font-bold text-slate-950">Edit Tag</h2>
             <p className="mt-2 text-sm text-slate-500">
-              Update the tag name, slug, and color.
+              Update the tag name and color.
             </p>
           </div>
           <SecondaryButton className="rounded-xl" onClick={handleClose}>

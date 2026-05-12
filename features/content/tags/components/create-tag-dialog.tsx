@@ -7,7 +7,6 @@ import { useToast } from "@/components/ui/toast";
 import {
   TagForm,
   defaultTagFormValues,
-  normalizeTagSlug,
   validateTagForm,
   type TagFormErrors,
   type TagFormValues,
@@ -28,12 +27,7 @@ export function CreateTagDialog({ onCreated }: CreateTagDialogProps) {
   const [errors, setErrors] = useState<TagFormErrors>({});
 
   function updateField<K extends keyof TagFormValues>(key: K, value: TagFormValues[K]) {
-    setValues((current) => {
-      if (key === "slug") {
-        return { ...current, slug: normalizeTagSlug(String(value)) };
-      }
-      return { ...current, [key]: value };
-    });
+    setValues((current) => ({ ...current, [key]: value }));
   }
 
   function resetForm() {
@@ -60,7 +54,6 @@ export function CreateTagDialog({ onCreated }: CreateTagDialogProps) {
     try {
       await tagsService.createTag({
         name: values.name.trim(),
-        slug: values.slug.trim() || undefined,
         color: values.color.trim() || undefined,
       });
 

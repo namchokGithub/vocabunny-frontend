@@ -11,19 +11,13 @@ export interface Tag {
 
   name: string;
 
-  slug?: string;
-
   color?: string | null;
-
-  usage_count?: number;
 
   created_by?: string | null;
   updated_by?: string | null;
 
   created_at: string;
   updated_at: string;
-
-  deleted_at?: string | null;
 }
 
 export interface GetTagsParams extends QueryParams {
@@ -38,17 +32,11 @@ export interface GetTagsParams extends QueryParams {
 
 export interface CreateTagPayload {
   name: string;
-
-  slug?: string;
-
   color?: string;
 }
 
 export interface UpdateTagPayload {
   name?: string;
-
-  slug?: string;
-
   color?: string;
 }
 
