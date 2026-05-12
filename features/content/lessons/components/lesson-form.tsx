@@ -1,7 +1,12 @@
 "use client";
 
-import type { FormEvent } from "react";
-import { FormField, FormSection, SelectField, TextareaField } from "@/components/form/form-field";
+import { type FormEvent, useState } from "react";
+import {
+  FormField,
+  FormSection,
+  SelectField,
+  TextareaField,
+} from "@/components/form/form-field";
 
 export interface LessonFormValues {
   title: string;
@@ -26,7 +31,10 @@ interface LessonFormProps {
   errors: LessonFormErrors;
   disabled?: boolean;
   sections: { id: string; title: string }[];
-  onChange: <K extends keyof LessonFormValues>(key: K, value: LessonFormValues[K]) => void;
+  onChange: <K extends keyof LessonFormValues>(
+    key: K,
+    value: LessonFormValues[K],
+  ) => void;
   onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
 }
 
@@ -64,12 +72,39 @@ export function validateLessonForm(values: LessonFormValues): LessonFormErrors {
   if (!values.sectionId.trim()) errors.sectionId = "Section is required.";
   if (values.orderNo.trim()) {
     const n = Number(values.orderNo);
-    if (!Number.isInteger(n) || n < 1) errors.orderNo = "Order must be a positive integer.";
+    if (!Number.isInteger(n) || n < 1)
+      errors.orderNo = "Order must be a positive integer.";
   }
   return errors;
 }
 
-export function LessonForm({ formId, values, errors, disabled = false, sections, onChange, onSubmit }: LessonFormProps) {
+export function LessonForm({
+  formId,
+  values,
+  errors,
+  disabled = false,
+  sections,
+  onChange,
+  onSubmit,
+}: LessonFormProps) {
+  const [slugTouched, setSlugTouched] = useState(false);
+
+  function handleTitleChange(value: string) {
+    onChange("title", value);
+
+    if (!slugTouched) {
+      onChange("slug", normalizeLessonSlug(value));
+    }
+  }
+
+  function handleSlugChange(value: string) {
+    const normalizedSlug = normalizeLessonSlug(value);
+
+    setSlugTouched(normalizedSlug.length > 0);
+
+    onChange("slug", normalizedSlug);
+  }
+
   return (
     <form className="space-y-5" id={formId} onSubmit={onSubmit}>
       <FormSection>
@@ -78,7 +113,7 @@ export function LessonForm({ formId, values, errors, disabled = false, sections,
           disabled={disabled}
           error={errors.title}
           label="Title"
-          onChange={(e) => onChange("title", e.target.value)}
+          onChange={(e) => handleTitleChange(e.target.value)}
           placeholder="Colors & Shapes"
           value={values.title}
         />
@@ -88,7 +123,7 @@ export function LessonForm({ formId, values, errors, disabled = false, sections,
           error={errors.slug}
           hint="Used in URLs. Example: colors-and-shapes"
           label="Slug"
-          onChange={(e) => onChange("slug", e.target.value)}
+          onChange={(e) => handleSlugChange(e.target.value)}
           placeholder="colors-and-shapes"
           value={values.slug}
         />
@@ -102,7 +137,9 @@ export function LessonForm({ formId, values, errors, disabled = false, sections,
         >
           <option value="">— Select a section —</option>
           {sections.map((s) => (
-            <option key={s.id} value={s.id}>{s.title}</option>
+            <option key={s.id} value={s.id}>
+              {s.title}
+            </option>
           ))}
         </SelectField>
         <FormField
@@ -117,7 +154,9 @@ export function LessonForm({ formId, values, errors, disabled = false, sections,
           value={values.orderNo}
         />
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-semibold text-slate-800">Publish Status</span>
+          <span className="text-sm font-semibold text-slate-800">
+            Publish Status
+          </span>
           <button
             className={`flex min-h-11.5 items-center justify-between rounded-xl border px-3 py-2.5 text-sm transition ${
               values.isPublished
@@ -125,7 +164,10 @@ export function LessonForm({ formId, values, errors, disabled = false, sections,
                 : "border-(--border) bg-white text-slate-700"
             }`}
             disabled={disabled}
-            onClick={(e) => { e.preventDefault(); onChange("isPublished", !values.isPublished); }}
+            onClick={(e) => {
+              e.preventDefault();
+              onChange("isPublished", !values.isPublished);
+            }}
             type="button"
           >
             <span>{values.isPublished ? "Published" : "Draft"}</span>

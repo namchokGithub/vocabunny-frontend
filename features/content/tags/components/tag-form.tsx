@@ -1,6 +1,6 @@
 "use client";
 
-import type { FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { FormField, FormSection } from "@/components/form/form-field";
 
 export interface TagFormValues {
@@ -19,7 +19,10 @@ interface TagFormProps {
   values: TagFormValues;
   errors: TagFormErrors;
   disabled?: boolean;
-  onChange: <K extends keyof TagFormValues>(key: K, value: TagFormValues[K]) => void;
+  onChange: <K extends keyof TagFormValues>(
+    key: K,
+    value: TagFormValues[K],
+  ) => void;
   onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
 }
 
@@ -52,7 +55,32 @@ export function validateTagForm(values: TagFormValues): TagFormErrors {
   return errors;
 }
 
-export function TagForm({ formId, values, errors, disabled = false, onChange, onSubmit }: TagFormProps) {
+export function TagForm({
+  formId,
+  values,
+  errors,
+  disabled = false,
+  onChange,
+  onSubmit,
+}: TagFormProps) {
+  const [slugTouched, setSlugTouched] = useState(false);
+
+  function handleNameChange(value: string) {
+    onChange("name", value);
+
+    if (!slugTouched) {
+      onChange("slug", normalizeTagSlug(value));
+    }
+  }
+
+  function handleSlugChange(value: string) {
+    const normalizedSlug = normalizeTagSlug(value);
+
+    setSlugTouched(normalizedSlug.length > 0);
+
+    onChange("slug", normalizedSlug);
+  }
+
   return (
     <form className="space-y-5" id={formId} onSubmit={onSubmit}>
       <FormSection>
@@ -61,7 +89,7 @@ export function TagForm({ formId, values, errors, disabled = false, onChange, on
           disabled={disabled}
           error={errors.name}
           label="Name"
-          onChange={(e) => onChange("name", e.target.value)}
+          onChange={(e) => handleNameChange(e.target.value)}
           placeholder="Animals"
           value={values.name}
         />
@@ -70,7 +98,7 @@ export function TagForm({ formId, values, errors, disabled = false, onChange, on
           error={errors.slug}
           hint="Optional. Auto-generated from name if left blank."
           label="Slug"
-          onChange={(e) => onChange("slug", e.target.value)}
+          onChange={(e) => handleSlugChange(e.target.value)}
           placeholder="animals"
           value={values.slug}
         />

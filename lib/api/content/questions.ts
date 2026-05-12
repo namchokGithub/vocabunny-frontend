@@ -21,10 +21,19 @@ export interface QuestionChoice {
   is_correct: boolean;
 }
 
+export interface QuestionSetSummary {
+  id: string;
+  unit_id: string;
+  slug: string;
+  title: string;
+  version: number;
+}
+
 export interface Question {
   id: string;
 
   question_set_id: string;
+  question_set?: QuestionSetSummary;
 
   type: QuestionType;
 
@@ -67,9 +76,7 @@ export interface GetQuestionsParams extends QueryParams {
 
   is_active?: boolean;
 
-  include_choices?: boolean;
-
-  include_tags?: boolean;
+  include?: string;
 
   sort_by?: string;
   sort_order?: "ASC" | "DESC";

@@ -6,10 +6,17 @@ import type { PaginatedResult } from "@/types/pagination";
 
 const BASE_PATH = "/api/v1/bo/content/lessons";
 
+export interface SectionSummary {
+  id: string;
+  slug: string;
+  title: string;
+}
+
 export interface Lesson {
   id: string;
 
   section_id: string;
+  section?: SectionSummary;
 
   slug: string;
   title: string;
@@ -37,6 +44,8 @@ export interface GetLessonsParams extends QueryParams {
   section_id?: string;
 
   is_published?: boolean;
+
+  include?: string;
 
   sort_by?: string;
   sort_order?: "ASC" | "DESC";

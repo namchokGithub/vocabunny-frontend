@@ -1,7 +1,12 @@
 "use client";
 
-import type { FormEvent } from "react";
-import { FormField, FormSection, SelectField, TextareaField } from "@/components/form/form-field";
+import { useState, type FormEvent } from "react";
+import {
+  FormField,
+  FormSection,
+  SelectField,
+  TextareaField,
+} from "@/components/form/form-field";
 
 export interface QuestionSetFormValues {
   title: string;
@@ -30,7 +35,10 @@ interface QuestionSetFormProps {
   errors: QuestionSetFormErrors;
   disabled?: boolean;
   units: { id: string; title: string }[];
-  onChange: <K extends keyof QuestionSetFormValues>(key: K, value: QuestionSetFormValues[K]) => void;
+  onChange: <K extends keyof QuestionSetFormValues>(
+    key: K,
+    value: QuestionSetFormValues[K],
+  ) => void;
   onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
 }
 
@@ -59,7 +67,9 @@ export function normalizeQuestionSetSlug(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-export function validateQuestionSetForm(values: QuestionSetFormValues): QuestionSetFormErrors {
+export function validateQuestionSetForm(
+  values: QuestionSetFormValues,
+): QuestionSetFormErrors {
   const errors: QuestionSetFormErrors = {};
   if (!values.title.trim()) errors.title = "Title is required.";
   if (!values.slug.trim()) {
@@ -70,22 +80,51 @@ export function validateQuestionSetForm(values: QuestionSetFormValues): Question
   if (!values.unitId.trim()) errors.unitId = "Unit is required.";
   if (values.orderNo.trim()) {
     const n = Number(values.orderNo);
-    if (!Number.isInteger(n) || n < 1) errors.orderNo = "Order must be a positive integer.";
+    if (!Number.isInteger(n) || n < 1)
+      errors.orderNo = "Order must be a positive integer.";
   }
   if (!values.version.trim()) {
     errors.version = "Version is required.";
   } else {
     const v = Number(values.version);
-    if (!Number.isInteger(v) || v < 1) errors.version = "Version must be a positive integer.";
+    if (!Number.isInteger(v) || v < 1)
+      errors.version = "Version must be a positive integer.";
   }
   if (values.estimatedSeconds.trim()) {
     const s = Number(values.estimatedSeconds);
-    if (!Number.isInteger(s) || s < 1) errors.estimatedSeconds = "Estimated seconds must be a positive integer.";
+    if (!Number.isInteger(s) || s < 1)
+      errors.estimatedSeconds = "Estimated seconds must be a positive integer.";
   }
   return errors;
 }
 
-export function QuestionSetForm({ formId, values, errors, disabled = false, units, onChange, onSubmit }: QuestionSetFormProps) {
+export function QuestionSetForm({
+  formId,
+  values,
+  errors,
+  disabled = false,
+  units,
+  onChange,
+  onSubmit,
+}: QuestionSetFormProps) {
+  const [slugTouched, setSlugTouched] = useState(false);
+
+  function handleTitleChange(value: string) {
+    onChange("title", value);
+
+    if (!slugTouched) {
+      onChange("slug", normalizeQuestionSetSlug(value));
+    }
+  }
+
+  function handleSlugChange(value: string) {
+    const normalizedSlug = normalizeQuestionSetSlug(value);
+
+    setSlugTouched(normalizedSlug.length > 0);
+
+    onChange("slug", normalizedSlug);
+  }
+
   return (
     <form className="space-y-5" id={formId} onSubmit={onSubmit}>
       <FormSection>
@@ -94,7 +133,7 @@ export function QuestionSetForm({ formId, values, errors, disabled = false, unit
           disabled={disabled}
           error={errors.title}
           label="Title"
-          onChange={(e) => onChange("title", e.target.value)}
+          onChange={(e) => handleTitleChange(e.target.value)}
           placeholder="Colors Quiz Set"
           value={values.title}
         />
@@ -104,7 +143,7 @@ export function QuestionSetForm({ formId, values, errors, disabled = false, unit
           error={errors.slug}
           hint="Used in URLs. Example: colors-quiz-set"
           label="Slug"
-          onChange={(e) => onChange("slug", e.target.value)}
+          onChange={(e) => handleSlugChange(e.target.value)}
           placeholder="colors-quiz-set"
           value={values.slug}
         />
@@ -118,7 +157,9 @@ export function QuestionSetForm({ formId, values, errors, disabled = false, unit
         >
           <option value="">— Select a unit —</option>
           {units.map((u) => (
-            <option key={u.id} value={u.id}>{u.title}</option>
+            <option key={u.id} value={u.id}>
+              {u.title}
+            </option>
           ))}
         </SelectField>
         <FormField
@@ -155,7 +196,9 @@ export function QuestionSetForm({ formId, values, errors, disabled = false, unit
           value={values.estimatedSeconds}
         />
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-semibold text-slate-800">Publish Status</span>
+          <span className="text-sm font-semibold text-slate-800">
+            Publish Status
+          </span>
           <button
             className={`flex min-h-11.5 items-center justify-between rounded-xl border px-3 py-2.5 text-sm transition ${
               values.isPublished
@@ -163,7 +206,10 @@ export function QuestionSetForm({ formId, values, errors, disabled = false, unit
                 : "border-(--border) bg-white text-slate-700"
             }`}
             disabled={disabled}
-            onClick={(e) => { e.preventDefault(); onChange("isPublished", !values.isPublished); }}
+            onClick={(e) => {
+              e.preventDefault();
+              onChange("isPublished", !values.isPublished);
+            }}
             type="button"
           >
             <span>{values.isPublished ? "Published" : "Draft"}</span>

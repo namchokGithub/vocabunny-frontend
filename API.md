@@ -15,6 +15,7 @@ All protected endpoints require a `Bearer` JWT token in the `Authorization` head
 - [Auth Identities (BO)](#auth-identities-bo)
 - [Content — Order Nos (BO)](#content--order-nos-bo)
 - [Content — Sections (BO)](#content--sections-bo)
+- [Content — Include Query Parameter](#content--include-query-parameter)
 - [Content — Lessons (BO)](#content--lessons-bo)
 - [Content — Units (BO)](#content--units-bo)
 - [Content — Question Sets (BO)](#content--question-sets-bo)
@@ -24,6 +25,7 @@ All protected endpoints require a `Bearer` JWT token in the `Authorization` head
 - [Content — Media Assets (BO)](#content--media-assets-bo)
 - [WebSocket](#websocket)
 - [Common Structures](#common-structures)
+- [Response Codes](#response-codes)
 - [Auth & Permissions Reference](#auth--permissions-reference)
 
 ---
@@ -353,6 +355,63 @@ Sections are the top level of the content hierarchy: **Section → Lesson → Un
 
 ---
 
+## Content — Include Query Parameter
+
+The `?include=` query parameter enables selective parent-relation preloading on GET list and GET by ID endpoints. Only the relations you explicitly name are loaded; unspecified relations are omitted.
+
+### Syntax
+
+```
+?include=<relation>[,<relation>...]
+```
+
+Multiple relations are comma-separated and case-insensitive.
+
+### Supported includes per entity
+
+| Entity      | Supported values                  | Notes                                                                            |
+| ----------- | --------------------------------- | -------------------------------------------------------------------------------- |
+| Lesson      | `section`                         | Embeds the parent Section                                                        |
+| Unit        | `lesson`                          | Embeds the parent Lesson                                                         |
+| QuestionSet | `unit`, `lesson`                  | `lesson` implies loading Unit first (resolved via Unit.Lesson — 3 queries total) |
+| Question    | `question_set`, `choices`, `tags` | `choices` and `tags` are opt-in on list; always loaded on single GET             |
+
+### Examples
+
+```http
+GET /api/v1/bo/content/lessons?include=section
+GET /api/v1/bo/content/units?include=lesson
+GET /api/v1/bo/content/question-sets?include=unit,lesson
+GET /api/v1/bo/content/questions?include=question_set,choices,tags
+```
+
+### Response shape
+
+Included relations appear as flat summary objects. Omitted relations are absent from the response (`omitempty`).
+
+```json
+{
+  "id": "...",
+  "lesson_id": "...",
+  "lesson": {
+    "id": "...",
+    "section_id": "...",
+    "slug": "colors",
+    "title": "Colors & Shapes"
+  }
+}
+```
+
+### Performance notes
+
+- Relations are preloaded with GORM `WHERE IN` — no N+1 queries.
+- `COUNT` queries run before any preloads to avoid join-inflated row counts.
+- Summary DTOs are flat (no recursion). For example, `unit.lesson` will not itself include a nested `section`.
+- On question **list** endpoints, `choices` and `tags` are **not** included by default. Use `?include=choices,tags` to opt in.
+- On question **GET by ID**, choices and tags are always loaded regardless of `?include=`.
+
+---
+
 ## Content — Lessons (BO)
 
 > Scope: `bo` | Base path: `/api/v1/bo/content/lessons`
@@ -378,12 +437,55 @@ Sections are the top level of the content hierarchy: **Section → Lesson → Un
 }
 ```
 
-### Additional Query Parameter — `GET /bo/content/lessons`
+### `GET /bo/content/lessons/:id` — Response Example
 
-| Param          | Type | Description                |
-| -------------- | ---- | -------------------------- |
-| `section_id`   | uuid | Filter by parent section   |
-| `is_published` | bool | Filter by published status |
+```json
+{
+  "id": "uuid-lesson",
+  "section_id": "uuid-section",
+  "slug": "colors-and-shapes",
+  "title": "Colors & Shapes",
+  "description": "Learn basic color and shape vocabulary.",
+  "order_no": 1,
+  "is_published": false,
+  "created_at": "2026-01-01T00:00:00Z",
+  "updated_at": "2026-01-01T00:00:00Z",
+  "created_by": "uuid-user",
+  "updated_by": "uuid-user"
+}
+```
+
+**With `?include=section`:**
+
+```json
+{
+  "id": "uuid-lesson",
+  "section_id": "uuid-section",
+  "slug": "colors-and-shapes",
+  "title": "Colors & Shapes",
+  "order_no": 1,
+  "is_published": false,
+  "section": {
+    "id": "uuid-section",
+    "slug": "beginner-vocab",
+    "title": "Beginner Vocabulary"
+  },
+  "created_at": "2026-01-01T00:00:00Z",
+  "updated_at": "2026-01-01T00:00:00Z",
+  "created_by": "uuid-user",
+  "updated_by": "uuid-user"
+}
+```
+
+### Query Parameters — `GET /bo/content/lessons`
+
+| Param                                    | Type   | Description                          |
+| ---------------------------------------- | ------ | ------------------------------------ |
+| `section_id`                             | uuid   | Filter by parent section             |
+| `is_published`                           | bool   | Filter by published status           |
+| `include`                                | string | Comma-separated relations: `section` |
+| `search`                                 | string | Search in slug / title / description |
+| `page`, `limit`, `sort_by`, `sort_order` | —      | Pagination & sorting                 |
 
 ---
 
@@ -410,6 +512,56 @@ Sections are the top level of the content hierarchy: **Section → Lesson → Un
   "is_published": false
 }
 ```
+
+### `GET /bo/content/units/:id` — Response Example
+
+```json
+{
+  "id": "uuid-unit",
+  "lesson_id": "uuid-lesson",
+  "slug": "red-things",
+  "title": "Red Things",
+  "order_no": 1,
+  "is_published": false,
+  "created_at": "2026-01-01T00:00:00Z",
+  "updated_at": "2026-01-01T00:00:00Z",
+  "created_by": "uuid-user",
+  "updated_by": "uuid-user"
+}
+```
+
+**With `?include=lesson`:**
+
+```json
+{
+  "id": "uuid-unit",
+  "lesson_id": "uuid-lesson",
+  "slug": "red-things",
+  "title": "Red Things",
+  "order_no": 1,
+  "is_published": false,
+  "lesson": {
+    "id": "uuid-lesson",
+    "section_id": "uuid-section",
+    "slug": "colors-and-shapes",
+    "title": "Colors & Shapes"
+  },
+  "created_at": "2026-01-01T00:00:00Z",
+  "updated_at": "2026-01-01T00:00:00Z",
+  "created_by": "uuid-user",
+  "updated_by": "uuid-user"
+}
+```
+
+### Query Parameters — `GET /bo/content/units`
+
+| Param                                    | Type   | Description                          |
+| ---------------------------------------- | ------ | ------------------------------------ |
+| `lesson_id`                              | uuid   | Filter by parent lesson              |
+| `is_published`                           | bool   | Filter by published status           |
+| `include`                                | string | Comma-separated relations: `lesson`  |
+| `search`                                 | string | Search in slug / title / description |
+| `page`, `limit`, `sort_by`, `sort_order` | —      | Pagination & sorting                 |
 
 ---
 
@@ -441,13 +593,68 @@ A question set groups questions within a unit and tracks a version number for cu
 }
 ```
 
-### Additional Query Parameters — `GET /bo/content/question-sets`
+### `GET /bo/content/question-sets/:id` — Response Example
 
-| Param          | Type | Description                |
-| -------------- | ---- | -------------------------- |
-| `unit_id`      | uuid | Filter by parent unit      |
-| `version`      | int  | Filter by version          |
-| `is_published` | bool | Filter by published status |
+```json
+{
+  "id": "uuid-qs",
+  "unit_id": "uuid-unit",
+  "slug": "red-things-v1",
+  "title": "Red Things — Practice Set",
+  "estimated_seconds": 300,
+  "order_no": 1,
+  "version": 1,
+  "is_published": false,
+  "created_at": "2026-01-01T00:00:00Z",
+  "updated_at": "2026-01-01T00:00:00Z",
+  "created_by": "uuid-user",
+  "updated_by": "uuid-user"
+}
+```
+
+**With `?include=unit,lesson`:**
+
+```json
+{
+  "id": "uuid-qs",
+  "unit_id": "uuid-unit",
+  "slug": "red-things-v1",
+  "title": "Red Things — Practice Set",
+  "estimated_seconds": 300,
+  "order_no": 1,
+  "version": 1,
+  "is_published": false,
+  "unit": {
+    "id": "uuid-unit",
+    "lesson_id": "uuid-lesson",
+    "slug": "red-things",
+    "title": "Red Things"
+  },
+  "lesson": {
+    "id": "uuid-lesson",
+    "section_id": "uuid-section",
+    "slug": "colors-and-shapes",
+    "title": "Colors & Shapes"
+  },
+  "created_at": "2026-01-01T00:00:00Z",
+  "updated_at": "2026-01-01T00:00:00Z",
+  "created_by": "uuid-user",
+  "updated_by": "uuid-user"
+}
+```
+
+> `include=lesson` alone also works — it resolves `Unit.Lesson` internally without requiring `unit` in the include list.
+
+### Query Parameters — `GET /bo/content/question-sets`
+
+| Param                                    | Type   | Description                                 |
+| ---------------------------------------- | ------ | ------------------------------------------- |
+| `unit_id`                                | uuid   | Filter by parent unit                       |
+| `version`                                | int    | Filter by version                           |
+| `is_published`                           | bool   | Filter by published status                  |
+| `include`                                | string | Comma-separated relations: `unit`, `lesson` |
+| `search`                                 | string | Search in slug / title / description        |
+| `page`, `limit`, `sort_by`, `sort_order` | —      | Pagination & sorting                        |
 
 ---
 
@@ -483,15 +690,84 @@ A question set groups questions within a unit and tracks a version number for cu
 }
 ```
 
-### Additional Query Parameters — `GET /bo/content/questions`
+### `GET /bo/content/questions/:id` — Response Example
 
-| Param             | Type   | Default | Description                 |
-| ----------------- | ------ | ------- | --------------------------- |
-| `question_set_id` | uuid   | —       | Filter by question set      |
-| `type`            | string | —       | Filter by question type     |
-| `is_active`       | bool   | —       | Filter by active status     |
-| `include_choices` | bool   | `true`  | Include choices in response |
-| `include_tags`    | bool   | `true`  | Include tags in response    |
+Choices and tags are **always** returned on single GET regardless of `?include=`.
+
+```json
+{
+  "id": "uuid-question",
+  "question_set_id": "uuid-qs",
+  "type": "MULTIPLE_CHOICE",
+  "question_text": "What color is the apple?",
+  "explanation": "Apples are typically red.",
+  "image_url": "https://cdn.example.com/apple.png",
+  "difficulty": 1,
+  "order_no": 1,
+  "is_active": true,
+  "choices": [
+    {
+      "id": "uuid-c1",
+      "question_id": "uuid-question",
+      "choice_text": "Red",
+      "choice_order": 1,
+      "is_correct": true
+    },
+    {
+      "id": "uuid-c2",
+      "question_id": "uuid-question",
+      "choice_text": "Blue",
+      "choice_order": 2,
+      "is_correct": false
+    }
+  ],
+  "tags": [{ "id": "uuid-tag-1", "name": "colors", "color": "#60A5FA" }],
+  "created_at": "2026-01-01T00:00:00Z",
+  "updated_at": "2026-01-01T00:00:00Z",
+  "created_by": "uuid-user",
+  "updated_by": "uuid-user"
+}
+```
+
+**With `?include=question_set`:**
+
+```json
+{
+  "id": "uuid-question",
+  "question_set_id": "uuid-qs",
+  "type": "MULTIPLE_CHOICE",
+  "question_text": "What color is the apple?",
+  "difficulty": 1,
+  "order_no": 1,
+  "is_active": true,
+  "question_set": {
+    "id": "uuid-qs",
+    "unit_id": "uuid-unit",
+    "slug": "red-things-v1",
+    "title": "Red Things — Practice Set",
+    "version": 1
+  },
+  "choices": [...],
+  "tags": [...],
+  "created_at": "2026-01-01T00:00:00Z",
+  "updated_at": "2026-01-01T00:00:00Z",
+  "created_by": "uuid-user",
+  "updated_by": "uuid-user"
+}
+```
+
+### Query Parameters — `GET /bo/content/questions`
+
+| Param                                    | Type   | Description                                                  |
+| ---------------------------------------- | ------ | ------------------------------------------------------------ |
+| `question_set_id`                        | uuid   | Filter by question set                                       |
+| `type`                                   | string | Filter by question type                                      |
+| `is_active`                              | bool   | Filter by active status                                      |
+| `include`                                | string | Comma-separated relations: `question_set`, `choices`, `tags` |
+| `search`                                 | string | Search in question text / explanation                        |
+| `page`, `limit`, `sort_by`, `sort_order` | —      | Pagination & sorting                                         |
+
+> **Breaking change:** `choices` and `tags` are **no longer included by default** on list responses. Use `?include=choices,tags` to opt in. On GET by ID, they are always returned.
 
 ---
 
@@ -527,6 +803,7 @@ Manage individual answer choices independently of their parent question.
 > Scope: `bo` | Base path: `/api/v1/bo/content/tags`
 
 Tags are attached to questions for filtering and curriculum organization.
+Each tag can optionally define a HEX color for UI rendering.
 
 | Method   | Path                   | Permission      | Description   |
 | -------- | ---------------------- | --------------- | ------------- |
@@ -539,7 +816,28 @@ Tags are attached to questions for filtering and curriculum organization.
 ### `POST /bo/content/tags` — Request Body
 
 ```json
-{ "name": "animals" }
+{ "name": "animals", "color": "#60A5FA" }
+```
+
+### Tag Fields
+
+| Field   | Type   | Description                                           |
+| ------- | ------ | ----------------------------------------------------- |
+| `name`  | string | Unique tag name used for categorization and search    |
+| `color` | string | Optional HEX color in `#RRGGBB` format for UI display |
+
+### Tag Response Example
+
+```json
+{
+  "id": "uuid-tag-1",
+  "name": "animals",
+  "color": "#60A5FA",
+  "created_at": "2026-01-01T00:00:00Z",
+  "updated_at": "2026-01-01T00:00:00Z",
+  "created_by": "uuid-user",
+  "updated_by": "uuid-user"
+}
 ```
 
 ---
@@ -604,7 +902,39 @@ The server initialises a WebSocket manager (`app.Websocket`) but **no public Web
 
 ## Common Structures
 
-### Paginated List Response
+### Success Response
+
+All successful responses share this envelope:
+
+```json
+{
+  "success": true,
+  "data": {},
+  "meta": {
+    "code": "vocab-qa-2001"
+  }
+}
+```
+
+`meta.code` is always present. `data` is omitted when there is nothing to return.
+
+### Error Response
+
+All error responses share this envelope:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "vocab-qa-4201",
+    "message": "section not found"
+  }
+}
+```
+
+HTTP status codes are used normally (200, 201, 400, 401, 403, 404, 409, 500). `error.code` is additional metadata and does **not** replace the HTTP status.
+
+### Paginated List Response (`data` field)
 
 ```json
 {
@@ -621,20 +951,152 @@ The server initialises a WebSocket manager (`app.Websocket`) but **no public Web
 
 `total_pages` is calculated from `total` and `limit`. When `total` is `0`, `total_pages` is also `0`.
 
-### Delete Response
+### Delete Response (`data` field)
 
 ```json
 { "id": "uuid", "status": "deleted" }
 ```
 
-### Error Response
+---
 
-Standard HTTP status codes. Body shape varies by error type (validation errors include a `details` array).
+## Response Codes
+
+### Format
+
+```
+vocab-{env}-{code}
+```
+
+`{env}` is set by the `APP_ENV` environment variable (e.g. `local`, `dev`, `qa`, `uat`, `prod`).
+
+**Examples:**
+
+| Environment | Example code      |
+| ----------- | ----------------- |
+| `dev`       | `vocab-dev-2001`  |
+| `qa`        | `vocab-qa-4201`   |
+| `prod`      | `vocab-prod-5001` |
+
+### HTTP status vs business code
+
+HTTP status expresses the outcome class (2xx, 4xx, 5xx). The business code in `meta.code` / `error.code` provides fine-grained categorization for client-side handling and log correlation. Never substitute one for the other.
+
+### Success Codes
+
+| Code   | Meaning                |
+| ------ | ---------------------- |
+| `2000` | Generic success        |
+| `2001` | Created successfully   |
+| `2002` | Updated successfully   |
+| `2003` | Deleted successfully   |
+| `2004` | Published successfully |
+| `2005` | Login successful       |
+
+### Validation Codes
+
+| Code   | Meaning                 |
+| ------ | ----------------------- |
+| `4001` | Validation failed       |
+| `4002` | Invalid request body    |
+| `4003` | Invalid pagination      |
+| `4004` | Invalid query parameter |
+
+### Auth / Identity Codes
+
+| Code   | Meaning             |
+| ------ | ------------------- |
+| `4101` | Invalid token       |
+| `4102` | Expired token       |
+| `4103` | Invalid credentials |
+| `4104` | Invalid scope       |
+| `4301` | Permission denied   |
+
+### Content Codes
+
+| Code   | Meaning                   |
+| ------ | ------------------------- |
+| `4201` | Section not found         |
+| `4202` | Lesson not found          |
+| `4203` | Unit not found            |
+| `4204` | Question set not found    |
+| `4205` | Question not found        |
+| `4206` | Invalid include parameter |
+| `4207` | Duplicate slug            |
+| `4208` | Invalid publish state     |
+
+### Conflict Codes
+
+| Code   | Meaning                    |
+| ------ | -------------------------- |
+| `4901` | Duplicate resource         |
+| `4902` | Concurrent update conflict |
+
+### Internal / System Codes
+
+| Code   | Meaning                      |
+| ------ | ---------------------------- |
+| `5001` | Internal server error        |
+| `5002` | Database transaction failed  |
+| `5003` | Unexpected repository error  |
+| `5004` | External service unavailable |
+
+### Response Examples
+
+**Success — created:**
 
 ```json
 {
-  "message": "validation failed",
-  "details": [{ "field": "email", "error": "must be a valid email address" }]
+  "success": true,
+  "data": { "id": "...", "slug": "intro" },
+  "meta": { "code": "vocab-qa-2001" }
+}
+```
+
+**Validation error (400):**
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "vocab-qa-4001",
+    "message": "Key: 'CreateSectionRequest.Slug' Error:Field validation for 'Slug' failed on the 'required' tag"
+  }
+}
+```
+
+**Not found (404):**
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "vocab-qa-4201",
+    "message": "section not found"
+  }
+}
+```
+
+**Unauthorized (401):**
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "vocab-qa-4101",
+    "message": "invalid token"
+  }
+}
+```
+
+**Internal server error (500):**
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "vocab-qa-5001",
+    "message": "internal server error"
+  }
 }
 ```
 

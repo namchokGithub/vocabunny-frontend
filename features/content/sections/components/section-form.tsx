@@ -1,6 +1,6 @@
 "use client";
 
-import type { FormEvent } from "react";
+import { type FormEvent, useState } from "react";
 
 import {
   FormField,
@@ -93,6 +93,24 @@ export function SectionForm({
   onChange,
   onSubmit,
 }: SectionFormProps) {
+  const [slugTouched, setSlugTouched] = useState(false);
+
+  function handleTitleChange(value: string) {
+    onChange("title", value);
+
+    if (!slugTouched) {
+      onChange("slug", normalizeSectionSlug(value));
+    }
+  }
+
+  function handleSlugChange(value: string) {
+    const normalizedSlug = normalizeSectionSlug(value);
+
+    setSlugTouched(normalizedSlug.length > 0);
+
+    onChange("slug", normalizedSlug);
+  }
+
   return (
     <form className="space-y-5" id={formId} onSubmit={onSubmit}>
       <FormSection>
@@ -101,7 +119,7 @@ export function SectionForm({
           disabled={disabled}
           error={errors.title}
           label="Title"
-          onChange={(event) => onChange("title", event.target.value)}
+          onChange={(e) => handleTitleChange(e.target.value)}
           placeholder="Beginner Vocab"
           value={values.title}
         />
@@ -111,7 +129,7 @@ export function SectionForm({
           error={errors.slug}
           hint="Used in URLs. Example: beginner-vocab"
           label="Slug"
-          onChange={(event) => onChange("slug", event.target.value)}
+          onChange={(e) => handleSlugChange(e.target.value)}
           placeholder="beginner-vocab"
           value={values.slug}
         />

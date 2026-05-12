@@ -37,11 +37,11 @@ export function createUnitColumns({ onEdit, onDelete }: CreateUnitColumnsOptions
       ),
     },
     {
-      key: "lesson_id",
-      header: "Lesson ID",
+      key: "lesson",
+      header: "Lesson",
       width: "200px",
       render: (unit) => (
-        <span className="font-mono text-xs text-slate-500">{unit.lesson_id}</span>
+        <span className="text-sm text-slate-700">{unit.lesson?.title ?? "-"}</span>
       ),
     },
     {

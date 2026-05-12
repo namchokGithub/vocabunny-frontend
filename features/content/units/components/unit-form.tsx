@@ -1,7 +1,12 @@
 "use client";
 
-import type { FormEvent } from "react";
-import { FormField, FormSection, SelectField, TextareaField } from "@/components/form/form-field";
+import { type FormEvent, useState } from "react";
+import {
+  FormField,
+  FormSection,
+  SelectField,
+  TextareaField,
+} from "@/components/form/form-field";
 
 export interface UnitFormValues {
   title: string;
@@ -26,7 +31,10 @@ interface UnitFormProps {
   errors: UnitFormErrors;
   disabled?: boolean;
   lessons: { id: string; title: string }[];
-  onChange: <K extends keyof UnitFormValues>(key: K, value: UnitFormValues[K]) => void;
+  onChange: <K extends keyof UnitFormValues>(
+    key: K,
+    value: UnitFormValues[K],
+  ) => void;
   onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
 }
 
@@ -55,21 +63,59 @@ export function normalizeUnitSlug(value: string) {
 
 export function validateUnitForm(values: UnitFormValues): UnitFormErrors {
   const errors: UnitFormErrors = {};
-  if (!values.title.trim()) errors.title = "Title is required.";
+
+  if (!values.title.trim()) {
+    errors.title = "Title is required.";
+  }
+
   if (!values.slug.trim()) {
     errors.slug = "Slug is required.";
   } else if (!/^[a-z0-9-]+$/.test(values.slug.trim())) {
     errors.slug = "Use lowercase letters, numbers, and hyphens only.";
   }
-  if (!values.lessonId.trim()) errors.lessonId = "Lesson is required.";
+
+  if (!values.lessonId.trim()) {
+    errors.lessonId = "Lesson is required.";
+  }
+
   if (values.orderNo.trim()) {
     const n = Number(values.orderNo);
-    if (!Number.isInteger(n) || n < 1) errors.orderNo = "Order must be a positive integer.";
+
+    if (!Number.isInteger(n) || n < 1) {
+      errors.orderNo = "Order must be a positive integer.";
+    }
   }
+
   return errors;
 }
 
-export function UnitForm({ formId, values, errors, disabled = false, lessons, onChange, onSubmit }: UnitFormProps) {
+export function UnitForm({
+  formId,
+  values,
+  errors,
+  disabled = false,
+  lessons,
+  onChange,
+  onSubmit,
+}: UnitFormProps) {
+  const [slugTouched, setSlugTouched] = useState(false);
+
+  function handleTitleChange(value: string) {
+    onChange("title", value);
+
+    if (!slugTouched) {
+      onChange("slug", normalizeUnitSlug(value));
+    }
+  }
+
+  function handleSlugChange(value: string) {
+    const normalizedSlug = normalizeUnitSlug(value);
+
+    setSlugTouched(normalizedSlug.length > 0);
+
+    onChange("slug", normalizedSlug);
+  }
+
   return (
     <form className="space-y-5" id={formId} onSubmit={onSubmit}>
       <FormSection>
@@ -78,7 +124,7 @@ export function UnitForm({ formId, values, errors, disabled = false, lessons, on
           disabled={disabled}
           error={errors.title}
           label="Title"
-          onChange={(e) => onChange("title", e.target.value)}
+          onChange={(e) => handleTitleChange(e.target.value)}
           placeholder="Red Things"
           value={values.title}
         />
@@ -88,7 +134,7 @@ export function UnitForm({ formId, values, errors, disabled = false, lessons, on
           error={errors.slug}
           hint="Used in URLs. Example: red-things"
           label="Slug"
-          onChange={(e) => onChange("slug", e.target.value)}
+          onChange={(e) => handleSlugChange(e.target.value)}
           placeholder="red-things"
           value={values.slug}
         />
@@ -101,8 +147,11 @@ export function UnitForm({ formId, values, errors, disabled = false, lessons, on
           onChange={(e) => onChange("lessonId", e.target.value)}
         >
           <option value="">— Select a lesson —</option>
-          {lessons.map((l) => (
-            <option key={l.id} value={l.id}>{l.title}</option>
+
+          {lessons.map((lesson) => (
+            <option key={lesson.id} value={lesson.id}>
+              {lesson.title}
+            </option>
           ))}
         </SelectField>
         <FormField
@@ -116,8 +165,12 @@ export function UnitForm({ formId, values, errors, disabled = false, lessons, on
           type="number"
           value={values.orderNo}
         />
+
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-semibold text-slate-800">Publish Status</span>
+          <span className="text-sm font-semibold text-slate-800">
+            Publish Status
+          </span>
+
           <button
             className={`flex min-h-11.5 items-center justify-between rounded-xl border px-3 py-2.5 text-sm transition ${
               values.isPublished
@@ -125,16 +178,21 @@ export function UnitForm({ formId, values, errors, disabled = false, lessons, on
                 : "border-(--border) bg-white text-slate-700"
             }`}
             disabled={disabled}
-            onClick={(e) => { e.preventDefault(); onChange("isPublished", !values.isPublished); }}
+            onClick={(e) => {
+              e.preventDefault();
+              onChange("isPublished", !values.isPublished);
+            }}
             type="button"
           >
             <span>{values.isPublished ? "Published" : "Draft"}</span>
+
             <span className="text-xs font-semibold tracking-[0.12em] uppercase">
               {values.isPublished ? "Visible" : "Hidden"}
             </span>
           </button>
         </label>
       </FormSection>
+
       <TextareaField
         disabled={disabled}
         error={errors.description}

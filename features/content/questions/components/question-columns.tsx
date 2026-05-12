@@ -28,11 +28,11 @@ export function createQuestionColumns({ onEdit, onDelete }: CreateQuestionColumn
       ),
     },
     {
-      key: "question_set_id",
-      header: "Question Set ID",
+      key: "question_set",
+      header: "Question Set",
       width: "200px",
       render: (question) => (
-        <span className="font-mono text-xs text-slate-500">{question.question_set_id}</span>
+        <span className="text-sm text-slate-700">{question.question_set?.title ?? "-"}</span>
       ),
     },
     {

@@ -37,11 +37,11 @@ export function createLessonColumns({ onEdit, onDelete }: CreateLessonColumnsOpt
       ),
     },
     {
-      key: "section_id",
-      header: "Section ID",
+      key: "section",
+      header: "Section",
       width: "200px",
       render: (lesson) => (
-        <span className="font-mono text-xs text-slate-500">{lesson.section_id}</span>
+        <span className="text-sm text-slate-700">{lesson.section?.title ?? "-"}</span>
       ),
     },
     {

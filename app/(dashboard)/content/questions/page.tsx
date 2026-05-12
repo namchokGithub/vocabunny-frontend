@@ -136,6 +136,7 @@ function QuestionsPageContent() {
           is_active: activeFilter,
           sort_by: sortKey,
           sort_order: sortKey && sortDirection ? (sortDirection.toUpperCase() as "ASC" | "DESC") : undefined,
+          include: "question_set",
         })}
         page={page}
         onPageChange={handlePageChange}

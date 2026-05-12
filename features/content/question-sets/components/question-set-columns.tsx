@@ -37,11 +37,11 @@ export function createQuestionSetColumns({ onEdit, onDelete }: CreateQuestionSet
       ),
     },
     {
-      key: "unit_id",
-      header: "Unit ID",
+      key: "unit",
+      header: "Unit",
       width: "200px",
       render: (qs) => (
-        <span className="font-mono text-xs text-slate-500">{qs.unit_id}</span>
+        <span className="text-sm text-slate-700">{qs.unit?.title ?? "-"}</span>
       ),
     },
     {

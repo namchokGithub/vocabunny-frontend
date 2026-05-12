@@ -6,10 +6,26 @@ import type { PaginatedResult } from "@/types/pagination";
 
 const BASE_PATH = "/api/v1/bo/content/question-sets";
 
+export interface UnitSummary {
+  id: string;
+  lesson_id: string;
+  slug: string;
+  title: string;
+}
+
+export interface LessonSummary {
+  id: string;
+  section_id: string;
+  slug: string;
+  title: string;
+}
+
 export interface QuestionSet {
   id: string;
 
   unit_id: string;
+  unit?: UnitSummary;
+  lesson?: LessonSummary;
 
   slug: string;
 
@@ -45,6 +61,8 @@ export interface GetQuestionSetsParams extends QueryParams {
   version?: number;
 
   is_published?: boolean;
+
+  include?: string;
 
   sort_by?: string;
   sort_order?: "ASC" | "DESC";

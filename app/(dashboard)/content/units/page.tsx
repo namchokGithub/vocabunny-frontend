@@ -136,6 +136,7 @@ function UnitsPageContent() {
           is_published: publishedFilter,
           sort_by: sortKey,
           sort_order: sortKey && sortDirection ? (sortDirection.toUpperCase() as "ASC" | "DESC") : undefined,
+          include: "lesson",
         })}
         page={page}
         onPageChange={handlePageChange}

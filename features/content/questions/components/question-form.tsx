@@ -1,7 +1,12 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { FormField, FormSection, SelectField, TextareaField } from "@/components/form/form-field";
+import {
+  FormField,
+  FormSection,
+  SelectField,
+  TextareaField,
+} from "@/components/form/form-field";
 import { GhostButton, SecondaryButton } from "@/components/ui/button";
 
 export interface ChoiceValue {
@@ -37,7 +42,10 @@ interface QuestionFormProps {
   errors: QuestionFormErrors;
   disabled?: boolean;
   questionSets: { id: string; title: string }[];
-  onChange: <K extends keyof QuestionFormValues>(key: K, value: QuestionFormValues[K]) => void;
+  onChange: <K extends keyof QuestionFormValues>(
+    key: K,
+    value: QuestionFormValues[K],
+  ) => void;
   onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
 }
 
@@ -53,23 +61,37 @@ export const defaultQuestionFormValues: QuestionFormValues = {
   choices: [{ choice_text: "", is_correct: false }],
 };
 
-export function validateQuestionForm(values: QuestionFormValues): QuestionFormErrors {
+export function validateQuestionForm(
+  values: QuestionFormValues,
+): QuestionFormErrors {
   const errors: QuestionFormErrors = {};
-  if (!values.questionSetId.trim()) errors.questionSetId = "Question Set is required.";
+  if (!values.questionSetId.trim())
+    errors.questionSetId = "Question Set is required.";
   if (!values.type.trim()) errors.type = "Type is required.";
-  if (!values.questionText.trim()) errors.questionText = "Question text is required.";
+  if (!values.questionText.trim())
+    errors.questionText = "Question text is required.";
   if (values.difficulty.trim()) {
     const d = Number(values.difficulty);
-    if (!Number.isInteger(d) || d < 1 || d > 5) errors.difficulty = "Difficulty must be between 1 and 5.";
+    if (!Number.isInteger(d) || d < 1 || d > 5)
+      errors.difficulty = "Difficulty must be between 1 and 5.";
   }
   if (values.orderNo.trim()) {
     const n = Number(values.orderNo);
-    if (!Number.isInteger(n) || n < 1) errors.orderNo = "Order must be a positive integer.";
+    if (!Number.isInteger(n) || n < 1)
+      errors.orderNo = "Order must be a positive integer.";
   }
   return errors;
 }
 
-export function QuestionForm({ formId, values, errors, disabled = false, questionSets, onChange, onSubmit }: QuestionFormProps) {
+export function QuestionForm({
+  formId,
+  values,
+  errors,
+  disabled = false,
+  questionSets,
+  onChange,
+  onSubmit,
+}: QuestionFormProps) {
   return (
     <form className="space-y-5" id={formId} onSubmit={onSubmit}>
       <FormSection>
@@ -83,7 +105,9 @@ export function QuestionForm({ formId, values, errors, disabled = false, questio
         >
           <option value="">— Select a question set —</option>
           {questionSets.map((qs) => (
-            <option key={qs.id} value={qs.id}>{qs.title}</option>
+            <option key={qs.id} value={qs.id}>
+              {qs.title}
+            </option>
           ))}
         </SelectField>
         <SelectField
@@ -135,7 +159,9 @@ export function QuestionForm({ formId, values, errors, disabled = false, questio
           value={values.imageUrl}
         />
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-semibold text-slate-800">Active Status</span>
+          <span className="text-sm font-semibold text-slate-800">
+            Active Status
+          </span>
           <button
             className={`flex min-h-11.5 items-center justify-between rounded-xl border px-3 py-2.5 text-sm transition ${
               values.isActive
@@ -143,7 +169,10 @@ export function QuestionForm({ formId, values, errors, disabled = false, questio
                 : "border-(--border) bg-white text-slate-700"
             }`}
             disabled={disabled}
-            onClick={(e) => { e.preventDefault(); onChange("isActive", !values.isActive); }}
+            onClick={(e) => {
+              e.preventDefault();
+              onChange("isActive", !values.isActive);
+            }}
             type="button"
           >
             <span>{values.isActive ? "Active" : "Inactive"}</span>
@@ -179,7 +208,12 @@ export function QuestionForm({ formId, values, errors, disabled = false, questio
           <SecondaryButton
             type="button"
             className="h-8 px-3 text-xs"
-            onClick={() => onChange("choices", [...values.choices, { choice_text: "", is_correct: false }])}
+            onClick={() =>
+              onChange("choices", [
+                ...values.choices,
+                { choice_text: "", is_correct: false },
+              ])
+            }
           >
             + Add Choice
           </SecondaryButton>
@@ -197,14 +231,17 @@ export function QuestionForm({ formId, values, errors, disabled = false, questio
                 onChange("choices", next);
               }}
             />
-            <label className="flex items-center gap-1.5 text-sm text-slate-600 whitespace-nowrap">
+            <label className="flex items-center gap-1.5 text-sm whitespace-nowrap text-slate-600">
               <input
                 type="checkbox"
                 checked={choice.is_correct}
                 disabled={disabled}
                 onChange={(e) => {
                   const next = [...values.choices];
-                  next[index] = { ...next[index], is_correct: e.target.checked };
+                  next[index] = {
+                    ...next[index],
+                    is_correct: e.target.checked,
+                  };
                   onChange("choices", next);
                 }}
               />
@@ -215,7 +252,12 @@ export function QuestionForm({ formId, values, errors, disabled = false, questio
                 type="button"
                 className="h-8 w-8 p-0 text-rose-500 hover:bg-rose-50"
                 disabled={disabled}
-                onClick={() => onChange("choices", values.choices.filter((_, i) => i !== index))}
+                onClick={() =>
+                  onChange(
+                    "choices",
+                    values.choices.filter((_, i) => i !== index),
+                  )
+                }
               >
                 ×
               </GhostButton>
