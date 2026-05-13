@@ -1,10 +1,56 @@
 # VocabBunny Frontend — Progress Log
 
-> Last updated: 2026-05-12 (session 4)
+> Last updated: 2026-05-14 (session 5)
 
 ---
 
-## Decisions Made
+## Session 5 — 2026-05-14: AI-Native Workspace Setup
+
+### What Was Done
+
+Full AI-native workspace initialized via brainstorming → writing-plans → subagent-driven-development (15 tasks, all reviewed).
+
+### Decisions Made
+
+- **Docs scope: frontend repo only** — no monorepo root docs, no cross-repo structure.
+- **Migration over preservation** — all root-level docs moved into `docs/` hierarchy; originals removed.
+- **Agent set: 3 files** — `frontend-agent.md`, `reviewer-agent.md`, `architect-agent.md`. No backend-agent (wrong repo), no qa-agent (no test suite).
+- **Structure: AI-first lean** — `docs/ai/` + `docs/engineering/api/` + `docs/product/`. No empty architecture/infrastructure dirs.
+- **`prompts/backend/` excluded** — frontend repo only.
+- **`AGENTS.md` kept at root as thin stub** — Claude Code reads it natively on session start; full content lives in `docs/ai/agents/frontend-agent.md`.
+
+### Files Created / Moved
+
+| Action | File |
+|---|---|
+| NEW | `docs/ai/agents/frontend-agent.md` |
+| NEW | `docs/ai/agents/reviewer-agent.md` |
+| NEW | `docs/ai/agents/architect-agent.md` |
+| NEW | `docs/ai/context/project-summary.md` |
+| NEW | `docs/ai/context/architecture-summary.md` |
+| NEW | `docs/ai/context/coding-rules.md` |
+| NEW | `docs/ai/context/domain-knowledge.md` |
+| MOVED | `docs/progress.md` → `docs/ai/progress/frontend.md` |
+| MOVED | `API.md` → `docs/engineering/api/api-reference.md` |
+| MOVED | `TODO.md` → `docs/product/backlog.md` |
+| REPLACED | `AGENTS.md` → thin stub |
+| NEW | `CONTRIBUTING.md` |
+| UPDATED | `README.md` (project structure + dev notes) |
+| UPDATED | `.gitignore` (AI artifact entries) |
+
+### State
+
+- 19 commits ahead of `origin/main` — not yet pushed (user will push manually)
+- Working tree clean
+- Spec + plan saved under `docs/superpowers/`
+
+### Reusable Prompt
+
+A prompt for applying the same workspace setup to `vocabunny-core-api` and `vocabunny-migrations` was generated and given to the user. Paste it at session start in each backend repo.
+
+---
+
+## Decisions Made (sessions 1–4)
 
 ### Architecture
 - **Sections module is the canonical reference** for all future content CRUD modules. Any new content resource must follow its patterns for form, dialog, column, and page structure.

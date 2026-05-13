@@ -38,15 +38,18 @@ Current MVP capabilities include:
 
 ## Project Structure
 
-The codebase is organized to keep UI, route logic, and integration boundaries clearly separated:
+- `app/` — route definitions, layouts, and page entry points
+- `components/` — reusable UI, layout, table, and form components
+- `features/` — domain feature modules (forms, dialogs, column factories)
+- `lib/api/` — raw HTTP layer and API types
+- `lib/services/` — service layer (unwraps API responses, typed returns)
+- `lib/hooks/` — shared React hooks
+- `lib/utils/` — utility helpers
+- `lib/constants/` — navigation, access, and environment constants
+- `types/` — shared TypeScript domain types
+- `docs/` — architecture docs, AI agent context, API reference, and progress log
 
-- `app/` route definitions, layouts, and page entry points
-- `components/` reusable UI, layout, dashboard, table, and form components
-- `lib/api/` mock API modules prepared for future real service integration
-- `lib/hooks/` shared React hooks
-- `lib/utils/` utility helpers
-- `lib/constants/` shared application constants
-- `types/` shared TypeScript domain models
+See [docs/ai/context/architecture-summary.md](docs/ai/context/architecture-summary.md) for the full layer map.
 
 ## Getting Started
 
@@ -88,9 +91,11 @@ pnpm exec next build --webpack
 
 ## Development Notes
 
-- The current implementation uses mock data for MVP workflows.
-- API-related code is isolated under `lib/api/` to make future backend integration straightforward.
+- API integration is live via `vocabunny-core-api`. Authentication uses JWT access + refresh tokens with `bo` scope.
+- Service layer (`lib/services/`) unwraps API responses before passing data to UI — components never see raw `ApiResponse`.
 - The UI is optimized for internal staff operations rather than learner experience.
+- See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development guide.
+- See [docs/ai/agents/frontend-agent.md](docs/ai/agents/frontend-agent.md) for architecture rules and conventions.
 
 ---
 
